@@ -648,6 +648,7 @@ class WhatsappInboxController extends Controller
 
         $conversations = WhatsappConversation::with(['lead', 'latestMessage'])
             ->inboxFilter($filter)
+            ->tap(fn ($q) => $this->scopeConversationsToActiveConfig($q))
             ->when($request->search, function ($q) use ($request) {
                 $term = $this->likeTerm($request->search);
                 $q->where(function ($sub) use ($term) {
@@ -683,6 +684,7 @@ class WhatsappInboxController extends Controller
 
         $chats = WhatsappConversation::with(['lead', 'latestMessage'])
             ->inboxFilter($filter)
+            ->tap(fn ($q) => $this->scopeConversationsToActiveConfig($q))
             ->where(function ($sub) use ($term) {
                 $sub->where('contact_name', 'like', $term)
                     ->orWhere('phone_number', 'like', $term);
@@ -695,7 +697,10 @@ class WhatsappInboxController extends Controller
             ->with(['conversation'])
             ->whereNotIn('message_type', ['reaction', 'revoked'])
             ->where('message', 'like', $term)
-            ->whereHas('conversation', fn ($q) => $q->inboxFilter($filter))
+            ->whereHas('conversation', function ($q) use ($filter) {
+                $q->inboxFilter($filter);
+                $this->scopeConversationsToActiveConfig($q);
+            })
             ->orderByDesc('created_at')
             ->limit(40)
             ->get();
