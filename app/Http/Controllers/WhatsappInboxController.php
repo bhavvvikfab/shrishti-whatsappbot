@@ -35,7 +35,11 @@ class WhatsappInboxController extends Controller
     {
         $config = $this->activeWhatsappConfig();
         if ($config && filled($config->phone_number_id)) {
-            $query->where('whatsapp_phone_id', $config->phone_number_id);
+            $phoneId = (string) $config->phone_number_id;
+            $query->where(function ($scoped) use ($phoneId) {
+                $scoped->where('whatsapp_phone_id', $phoneId)
+                    ->orWhereNull('whatsapp_phone_id');
+            });
         } else {
             $query->whereRaw('1 = 0');
         }
