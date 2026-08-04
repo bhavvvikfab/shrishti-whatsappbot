@@ -384,6 +384,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('whatsapp')->name('whatsapp.')->middleware('whatsapp.enabled')->group(function () {
 
         // Chat Inbox
+        Route::get('/settings', [WhatsappConfigController::class, 'settingsPage'])->name('settings');
         Route::get('/inbox', [\App\Http\Controllers\WhatsappInboxController::class, 'inbox'])->name('inbox');
         Route::get('/inbox/search', [\App\Http\Controllers\WhatsappInboxController::class, 'searchInbox'])->name('inbox.search');
         Route::get('/inbox/conversations', [\App\Http\Controllers\WhatsappInboxController::class, 'conversationList'])->name('conversations.list');

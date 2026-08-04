@@ -13,23 +13,58 @@ use App\Models\WhatsappConversation;
 use App\Models\WhatsappFollowup;
 use App\Models\WhatsappMessage;
 use App\Models\WhatsappMessageTemplate;
-use App\Services\WhatsAppInboxService;
+use App\Models\WhatsappConfig;
+use App\Services\WhatsappConfigResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class WhatsappInboxController extends Controller
 {
-    public function __construct(private WhatsAppInboxService $inboxService) {}
+    public function __construct(
+        private WhatsAppInboxService $inboxService,
+        private WhatsappConfigResolver $configResolver,
+    ) {}
+
+    private function activeWhatsappConfig(): ?WhatsappConfig
+    {
+        return WhatsappConfig::forUser(Auth::user());
+    }
+
+    private function scopeConversationsToActiveConfig($query): void
+    {
+        $config = $this->activeWhatsappConfig();
+        if ($config && filled($config->phone_number_id)) {
+            $query->where('whatsapp_phone_id', $config->phone_number_id);
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+    }
 
     /**
      * WhatsApp Chat Inbox
      */
     public function inbox(Request $request)
     {
+        $user = Auth::user();
+        $activeConfig = $this->activeWhatsappConfig();
+        $needsSetup = $user
+            && ! $user->isAdmin()
+            && $user->hasMatrixPermission('view_whatsapp')
+            && $activeConfig === null;
+
+        if ($needsSetup) {
+            return redirect()
+                ->route('whatsapp.settings')
+                ->with('warning', 'Configure your WhatsApp bot or ask admin for shared bot access.');
+        }
+
+        $this->inboxService->useConfig($activeConfig);
+
         $filter = $request->get('status', WhatsappConversation::FILTER_ALL);
 
         $conversations = WhatsappConversation::with(['lead', 'assignedUser', 'latestMessage'])
             ->inboxFilter($filter)
+            ->tap(fn ($q) => $this->scopeConversationsToActiveConfig($q))
             ->when($request->assigned_to, fn($q) => $q->where('assigned_user_id', $request->assigned_to))
             ->when($request->search, function ($q) use ($request) {
                 $term = $this->likeTerm($request->search);
@@ -46,7 +81,9 @@ class WhatsappInboxController extends Controller
             ->paginate(30);
 
         $users = User::orderBy('name')->get();
-        $totalUnread = WhatsappConversation::where('unread_count', '>', 0)->sum('unread_count');
+        $totalUnreadQuery = WhatsappConversation::query()->where('unread_count', '>', 0);
+        $this->scopeConversationsToActiveConfig($totalUnreadQuery);
+        $totalUnread = $totalUnreadQuery->sum('unread_count');
 
         return view('whatsapp.inbox', compact('conversations', 'users', 'totalUnread', 'filter'));
     }
@@ -56,6 +93,14 @@ class WhatsappInboxController extends Controller
      */
     public function conversation(WhatsappConversation $conversation, Request $request)
     {
+        $activeConfig = $this->activeWhatsappConfig();
+        if ($activeConfig && filled($activeConfig->phone_number_id)
+            && (string) $conversation->whatsapp_phone_id !== (string) $activeConfig->phone_number_id) {
+            abort(404);
+        }
+
+        $this->inboxService->useConfig($activeConfig);
+
         $conversation->load(['lead', 'assignedUser', 'followups.assignedUser']);
         $conversation->markAsRead();
 
@@ -89,11 +134,24 @@ class WhatsappInboxController extends Controller
         ));
     }
 
+    private function prepareInboxForConversation(WhatsappConversation $conversation): void
+    {
+        $activeConfig = $this->activeWhatsappConfig();
+        if ($activeConfig && filled($activeConfig->phone_number_id)
+            && (string) $conversation->whatsapp_phone_id !== (string) $activeConfig->phone_number_id) {
+            abort(404);
+        }
+
+        $this->inboxService->useConfig($activeConfig);
+    }
+
     /**
      * Send a message in a conversation
      */
     public function sendMessage(Request $request, WhatsappConversation $conversation)
     {
+        $this->prepareInboxForConversation($conversation);
+
         $request->validate([
             'message' => 'required_without:template_name|nullable|string|max:4096',
             'template_name' => 'required_without:message|nullable|string',
@@ -145,6 +203,8 @@ class WhatsappInboxController extends Controller
      */
     public function sendMedia(Request $request, WhatsappConversation $conversation)
     {
+        $this->prepareInboxForConversation($conversation);
+
         $validated = $request->validate([
             'file' => [
                 'required',
@@ -203,6 +263,8 @@ class WhatsappInboxController extends Controller
      */
     public function sendLocation(Request $request, WhatsappConversation $conversation)
     {
+        $this->prepareInboxForConversation($conversation);
+
         $validated = $request->validate([
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
@@ -350,6 +412,8 @@ class WhatsappInboxController extends Controller
      */
     public function deleteMessage(Request $request, WhatsappConversation $conversation, WhatsappMessage $message)
     {
+        $this->prepareInboxForConversation($conversation);
+
         if ($message->conversation_id !== $conversation->id) {
             abort(404);
         }
@@ -415,6 +479,8 @@ class WhatsappInboxController extends Controller
      */
     public function reactMessage(Request $request, WhatsappConversation $conversation, WhatsappMessage $message)
     {
+        $this->prepareInboxForConversation($conversation);
+
         if ($message->conversation_id !== $conversation->id) {
             abort(404);
         }
@@ -505,6 +571,8 @@ class WhatsappInboxController extends Controller
      */
     public function setAiReplyPreference(Request $request, WhatsappConversation $conversation)
     {
+        $this->prepareInboxForConversation($conversation);
+
         $request->validate(['ai_reply_enabled' => 'required|boolean']);
 
         $enabled = $request->boolean('ai_reply_enabled');

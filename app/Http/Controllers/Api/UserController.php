@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\User;
+use App\Models\WhatsappConfig;
+use App\Services\WhatsappConfigResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
@@ -42,6 +44,76 @@ class UserController extends ApiBaseController
 
         $user->syncPermissions($permissions);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+    }
+
+    private function syncStaffWhatsappBot(User $user, Request $request): void
+    {
+        $mode = $request->input('whatsapp_bot_mode', WhatsappConfigResolver::MODE_NONE);
+        $resolver = app(WhatsappConfigResolver::class);
+
+        if ($mode === WhatsappConfigResolver::MODE_SHARED) {
+            $resolver->grantSharedAccess($user);
+
+            return;
+        }
+
+        $resolver->revokeSharedAccess($user);
+
+        if ($mode !== WhatsappConfigResolver::MODE_OWN) {
+            return;
+        }
+
+        $hasAnyCredential = filled($request->input('wa_app_id'))
+            || filled($request->input('wa_phone_number_id'))
+            || filled($request->input('wa_access_token'));
+
+        if (! $hasAnyCredential) {
+            return;
+        }
+
+        $existing = $resolver->ownConfigForUser($user);
+        $rules = [
+            'wa_app_id' => 'required|string',
+            'wa_phone_number_id' => 'required|string',
+            'wa_business_account_id' => 'required|string',
+            'wa_access_token' => 'required|string',
+            'wa_webhook_url' => 'nullable|string',
+            'wa_verify_token' => 'nullable|string',
+        ];
+
+        if (! $existing || ! $existing->app_secret) {
+            $rules['wa_app_secret'] = 'required|string';
+        } else {
+            $rules['wa_app_secret'] = 'nullable|string';
+        }
+
+        $waData = $request->validate($rules);
+
+        $payload = [
+            'user_id' => $user->id,
+            'app_id' => $waData['wa_app_id'],
+            'phone_number_id' => $waData['wa_phone_number_id'],
+            'business_account_id' => $waData['wa_business_account_id'],
+            'access_token' => $waData['wa_access_token'],
+            'webhook_url' => $waData['wa_webhook_url'] ?? WhatsappConfig::webhookCallbackUrl(),
+            'verify_token' => $waData['wa_verify_token'] ?? null,
+            'modified_by' => auth()->id(),
+        ];
+
+        if (! empty($waData['wa_app_secret'])) {
+            $payload['app_secret'] = $waData['wa_app_secret'];
+        }
+
+        if ($existing) {
+            $existing->fill(collect($payload)->except('app_secret')->toArray());
+            if (! empty($waData['wa_app_secret'])) {
+                $existing->app_secret = $waData['wa_app_secret'];
+            }
+            $existing->save();
+        } else {
+            $payload['created_by'] = auth()->id();
+            WhatsappConfig::create($payload);
+        }
     }
 
     public function index(Request $request)
@@ -114,6 +186,11 @@ class UserController extends ApiBaseController
             'image' => 'nullable|file|mimes:avif,webp,jpg,jpeg,png,gif,bmp,svg|max:2048',
             'permissions' => 'nullable|array',
             'permissions.*' => ['string', Rule::in($allowedPermissions)],
+            'whatsapp_bot_mode' => ['nullable', Rule::in([
+                WhatsappConfigResolver::MODE_NONE,
+                WhatsappConfigResolver::MODE_OWN,
+                WhatsappConfigResolver::MODE_SHARED,
+            ])],
         ], [
             'phone.regex' => 'Phone number must be exactly 10 digits.',
             'image.mimes' => 'Please select a valid image! Allowed: AVIF, WEBP, JPG, JPEG, PNG, GIF, BMP, SVG.',
@@ -141,6 +218,7 @@ class UserController extends ApiBaseController
         }
 
         $this->syncMatrixPermissions($user, $data['permissions'] ?? []);
+        $this->syncStaffWhatsappBot($user, $request);
         app(\App\Services\UserLogService::class)->created($user, 'Created a Staff ' . $user->name);
 
         try {
@@ -201,6 +279,11 @@ class UserController extends ApiBaseController
             'image' => 'nullable|file|mimes:avif,webp,jpg,jpeg,png,gif,bmp,svg|max:2048',
             'permissions' => 'nullable|array',
             'permissions.*' => ['string', Rule::in($allowedPermissions)],
+            'whatsapp_bot_mode' => ['nullable', Rule::in([
+                WhatsappConfigResolver::MODE_NONE,
+                WhatsappConfigResolver::MODE_OWN,
+                WhatsappConfigResolver::MODE_SHARED,
+            ])],
         ], [
             'email.in' => 'Email cannot be changed.',
             'phone.regex' => 'Phone number must be exactly 10 digits.',
@@ -225,6 +308,7 @@ class UserController extends ApiBaseController
         $user->save();
 
         $this->syncMatrixPermissions($user, $data['permissions'] ?? []);
+        $this->syncStaffWhatsappBot($user, $request);
         app(\App\Services\UserLogService::class)->updated($user, 'Updated a Staff ' . $user->name);
 
         try {

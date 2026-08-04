@@ -657,6 +657,8 @@
             return;
         }
 
+        initWhatsappBotModeToggle();
+
         const authHeaders = (extraHeaders = {}) =>
             typeof window.crmApplyAuthHeaders === "function"
                 ? window.crmApplyAuthHeaders(extraHeaders)
@@ -711,6 +713,25 @@
                     },
                 });
             });
+        });
+    }
+
+    function initWhatsappBotModeToggle() {
+        document.querySelectorAll("[data-whatsapp-bot-setup]").forEach((section) => {
+            const fields = section.querySelector("[data-whatsapp-bot-fields]");
+            const radios = section.querySelectorAll('input[name="whatsapp_bot_mode"]');
+
+            if (!fields || !radios.length) {
+                return;
+            }
+
+            const sync = () => {
+                const selected = section.querySelector('input[name="whatsapp_bot_mode"]:checked');
+                fields.style.display = selected && selected.value === "own" ? "" : "none";
+            };
+
+            radios.forEach((radio) => radio.addEventListener("change", sync));
+            sync();
         });
     }
 

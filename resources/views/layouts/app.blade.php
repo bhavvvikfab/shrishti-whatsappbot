@@ -252,6 +252,14 @@
                                     <span>WhatsApp Settings</span>
                                 </a>
                             </li>
+                        @elseif($canViewWhatsapp)
+                            <li class="nav-item mt-1">
+                                <a class="nav-link ccc ddd @if(request()->routeIs('whatsapp.settings')) active @endif"
+                                    href="{{ route('whatsapp.settings') }}">
+                                    <i class="bi bi-gear me-2 text-secondary"></i>
+                                    <span>WhatsApp Settings</span>
+                                </a>
+                            </li>
                         @endif
                     @endif
                     

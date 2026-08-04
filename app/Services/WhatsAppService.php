@@ -40,10 +40,17 @@ class WhatsAppService
         return $toNumber;
     }
 
+    public function useConfig(?WhatsappConfig $config): self
+    {
+        $this->config = $config;
+
+        return $this;
+    }
+
     private function config(): ?WhatsappConfig
     {
         if ($this->config === null) {
-            $this->config = WhatsappConfig::current();
+            $this->config = WhatsappConfig::adminConfig();
         }
 
         return $this->config;

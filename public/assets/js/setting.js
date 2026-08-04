@@ -130,15 +130,23 @@ function loadWhatsappConfig() {
         method: 'GET',
         success: function (res) {
             if (res) {
-                $('#wa_app_id').val(res.app_id || '');
-                $('#wa_app_secret').val(res.app_secret || '');
-                $('#wa_phone_number_id').val(res.phone_number_id || '');
-                $('#wa_business_account_id').val(res.business_account_id || '');
-                $('#wa_access_token').val(res.access_token || '');
-                $('#wa_webhook_url').val(res.webhook_url || '');
-                $('#wa_verify_token').val(res.verify_token || '');
+                if (res.using_shared_config) {
+                    $('#wa_status_msg').text('Using admin WhatsApp bot (read-only)').addClass('text-info');
+                    $('#wa_app_id, #wa_app_secret, #wa_phone_number_id, #wa_business_account_id, #wa_access_token, #wa_webhook_url, #wa_verify_token').prop('disabled', true);
+                    $('#wa_save_btn').prop('disabled', true);
+                } else {
+                    $('#wa_app_id, #wa_app_secret, #wa_phone_number_id, #wa_business_account_id, #wa_access_token, #wa_webhook_url, #wa_verify_token').prop('disabled', false);
+                    $('#wa_save_btn').prop('disabled', false);
+                    $('#wa_app_id').val(res.app_id || '');
+                    $('#wa_app_secret').val(res.app_secret || '');
+                    $('#wa_phone_number_id').val(res.phone_number_id || '');
+                    $('#wa_business_account_id').val(res.business_account_id || '');
+                    $('#wa_access_token').val(res.access_token || '');
+                    $('#wa_webhook_url').val(res.webhook_url || '');
+                    $('#wa_verify_token').val(res.verify_token || '');
+                    $('#wa_status_msg').text('Loaded').addClass('text-success');
+                }
             }
-            $('#wa_status_msg').text('Loaded').addClass('text-success');
         },
         error: function () {
             $('#wa_status_msg').text('Failed to load').addClass('text-danger');

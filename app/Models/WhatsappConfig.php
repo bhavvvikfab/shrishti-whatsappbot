@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\WhatsappConfigResolver;
 use App\Traits\Blameable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -13,6 +14,7 @@ class WhatsappConfig extends Model
     protected $table = 'whatsapp_config';
 
     protected $fillable = [
+        'user_id',
         'app_id',
         'app_secret',
         'phone_number_id',
@@ -24,9 +26,35 @@ class WhatsappConfig extends Model
         'modified_by',
     ];
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Active WhatsApp config for the authenticated user (or explicit user).
+     */
+    public static function forUser(?User $user = null): ?self
+    {
+        return app(WhatsappConfigResolver::class)->forUser($user);
+    }
+
+    /**
+     * Legacy helper — resolves config for the current user, or admin config when unauthenticated.
+     */
     public static function current(): ?self
     {
-        return static::first();
+        return static::forUser();
+    }
+
+    public static function adminConfig(): ?self
+    {
+        return app(WhatsappConfigResolver::class)->adminConfig();
+    }
+
+    public static function byPhoneNumberId(?string $phoneNumberId): ?self
+    {
+        return app(WhatsappConfigResolver::class)->byPhoneNumberId($phoneNumberId);
     }
 
     public static function webhookCallbackUrl(): string
@@ -35,11 +63,11 @@ class WhatsappConfig extends Model
     }
 
     /**
-     * Token Meta sends on webhook GET verify — settings DB first, then .env.
+     * Token Meta sends on webhook GET verify — admin config DB first, then .env.
      */
     public static function resolveWebhookVerifyToken(): string
     {
-        $fromDb = static::query()->value('verify_token');
+        $fromDb = static::adminConfig()?->verify_token;
 
         if (filled($fromDb)) {
             return (string) $fromDb;

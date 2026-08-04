@@ -105,7 +105,12 @@ class WhatsappWebhookController extends Controller
                 $value = $change['value'] ?? [];
 
                 $webhookPhoneId = $value['metadata']['phone_number_id'] ?? null;
-                if ($webhookPhoneId && $crmPhoneId && (string) $webhookPhoneId !== (string) $crmPhoneId) {
+                $matchedConfig = WhatsappConfig::byPhoneNumberId($webhookPhoneId);
+                if ($matchedConfig) {
+                    $this->inboxService->useConfig($matchedConfig);
+                }
+
+                if ($webhookPhoneId && $crmPhoneId && (string) $webhookPhoneId !== (string) $crmPhoneId && ! $matchedConfig) {
                     Log::warning('WhatsApp webhook phone_number_id differs from CRM whatsapp_config', [
                         'webhook_phone_number_id' => $webhookPhoneId,
                         'crm_phone_number_id' => $crmPhoneId,

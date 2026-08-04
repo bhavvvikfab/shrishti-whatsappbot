@@ -65,8 +65,17 @@ class UserController extends Controller
         $permissionMatrix = config('crm_permissions.modules', []);
         $permissionActions = config('crm_permissions.actions', []);
         $userPermissions = $user->permissions->pluck('name')->all();
+        $whatsappBotMode = $user->whatsappConfigMode();
+        $staffWhatsappConfig = $user->whatsappConfig;
 
-        return view('crm.users.edit', compact('user', 'permissionMatrix', 'permissionActions', 'userPermissions'));
+        return view('crm.users.edit', compact(
+            'user',
+            'permissionMatrix',
+            'permissionActions',
+            'userPermissions',
+            'whatsappBotMode',
+            'staffWhatsappConfig',
+        ));
     }
 
     public function export(Request $request)

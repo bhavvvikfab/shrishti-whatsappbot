@@ -153,6 +153,11 @@
                         'selectedPermissions' => old('permissions', $userPermissions ?? []),
                     ])
 
+                    @include('crm.users.partials.whatsapp-bot', [
+                        'whatsappBotMode' => $whatsappBotMode ?? 'none',
+                        'staffWhatsappConfig' => $staffWhatsappConfig ?? null,
+                    ])
+
                 </form>
             </div>
         </div>

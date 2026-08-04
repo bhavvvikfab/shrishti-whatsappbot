@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\WhatsappConfig;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -78,6 +79,26 @@ class User extends Authenticatable
         }
 
         return $this->permissions()->where('name', $permission)->exists();
+    }
+
+    public function whatsappConfig()
+    {
+        return $this->hasOne(WhatsappConfig::class);
+    }
+
+    public function whatsappConfigMode(): string
+    {
+        return app(\App\Services\WhatsappConfigResolver::class)->resolveMode($this);
+    }
+
+    public function activeWhatsappConfig(): ?WhatsappConfig
+    {
+        return WhatsappConfig::forUser($this);
+    }
+
+    public function canUseWhatsappInbox(): bool
+    {
+        return app(\App\Services\WhatsappConfigResolver::class)->canAccessWhatsapp($this);
     }
 
     public function assignedDeals()

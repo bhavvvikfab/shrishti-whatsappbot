@@ -30,11 +30,19 @@ class WhatsAppInboxService
         $this->openAIService = $openAIService;
     }
 
+    public function useConfig(?WhatsappConfig $config): self
+    {
+        $this->config = $config;
+
+        return $this;
+    }
+
     private function config(): ?WhatsappConfig
     {
         if ($this->config === null) {
-            $this->config = WhatsappConfig::current();
+            $this->config = WhatsappConfig::forUser(auth()->user());
         }
+
         return $this->config;
     }
 
@@ -1741,6 +1749,13 @@ class WhatsAppInboxService
     public function processDeferredAiReply(int $conversationId, int $incomingMessageId): void
     {
         $conversation = WhatsappConversation::find($conversationId);
+
+        if ($conversation && filled($conversation->whatsapp_phone_id)) {
+            $config = WhatsappConfig::byPhoneNumberId($conversation->whatsapp_phone_id);
+            if ($config) {
+                $this->useConfig($config);
+            }
+        }
 
         if (! $this->isAiAutoReplyEnabled()) {
             if ($conversation) {

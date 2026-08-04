@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Setting;
 use App\Models\WhatsappConfig;
 use App\Models\WhatsappLog;
 use App\Models\WhatsappMessageTemplate;
+use App\Services\WhatsappConfigResolver;
 use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,6 +14,21 @@ use Illuminate\Support\Facades\Http;
 
 class WhatsappConfigController extends Controller
 {
+    public function __construct(private WhatsappConfigResolver $configResolver) {}
+
+    public function settingsPage()
+    {
+        $user = Auth::user();
+        abort_unless($user && ($user->isAdmin() || $user->hasMatrixPermission('view_whatsapp')), 403);
+
+        $whatsappModuleEnabled = Setting::isEnabled('whatsapp_module_enabled', true);
+        $mode = $this->configResolver->resolveMode($user);
+        $canEdit = $user->isAdmin() || $mode !== WhatsappConfigResolver::MODE_SHARED;
+        $usingShared = $mode === WhatsappConfigResolver::MODE_SHARED;
+
+        return view('whatsapp.settings', compact('whatsappModuleEnabled', 'mode', 'canEdit', 'usingShared'));
+    }
+
     private function whatsappApiClient(bool $verifySsl = true)
     {
         $client = Http::timeout(20)
@@ -23,7 +40,7 @@ class WhatsappConfigController extends Controller
             ])
             ->retry(1, 250);
 
-        if (!$verifySsl || app()->environment(['local', 'development'])) {
+        if (! $verifySsl || app()->environment(['local', 'development'])) {
             $client = $client->withoutVerifying();
         }
 
@@ -38,7 +55,7 @@ class WhatsappConfigController extends Controller
                 'limit' => 100,
             ]);
         } catch (\Throwable $e) {
-            if (!str_contains(strtolower($e->getMessage()), 'ssl certificate')) {
+            if (! str_contains(strtolower($e->getMessage()), 'ssl certificate')) {
                 throw $e;
             }
 
@@ -51,8 +68,14 @@ class WhatsappConfigController extends Controller
 
     public function show()
     {
-        $config = WhatsappConfig::current();
-        $data = $config ? $config->toArray() : [];
+        $user = Auth::user();
+        abort_unless($user, 403);
+
+        $activeConfig = WhatsappConfig::forUser($user);
+        $ownConfig = $this->configResolver->ownConfigForUser($user);
+        $mode = $this->configResolver->resolveMode($user);
+
+        $data = $ownConfig ? $ownConfig->toArray() : ($activeConfig ? $activeConfig->toArray() : []);
 
         if (empty($data['webhook_url'])) {
             $data['webhook_url'] = WhatsappConfig::webhookCallbackUrl();
@@ -62,16 +85,28 @@ class WhatsappConfigController extends Controller
             $data['verify_token'] = config('services.whatsapp.verify_token', '');
         }
 
+        $data['whatsapp_config_mode'] = $mode;
+        $data['can_edit'] = $user->isAdmin() || $mode !== WhatsappConfigResolver::MODE_SHARED;
+        $data['using_shared_config'] = $mode === WhatsappConfigResolver::MODE_SHARED;
+        $data['has_own_config'] = $ownConfig !== null;
+
         return response()->json($data);
     }
 
     public function store(Request $request)
     {
-        $userId = Auth::id();
+        $user = Auth::user();
+        abort_unless($user, 403);
 
-        $config = WhatsappConfig::current();
+        if (! $user->isAdmin() && $this->configResolver->resolveMode($user) === WhatsappConfigResolver::MODE_SHARED) {
+            return response()->json([
+                'message' => 'You are using the admin WhatsApp bot. Ask admin to remove shared access if you need your own bot.',
+            ], 403);
+        }
 
-        // Validation: App Secret is required only when it doesn't exist yet
+        $userId = $user->id;
+        $config = $this->configResolver->ownConfigForUser($user);
+
         $rules = [
             'app_id' => 'required|string',
             'phone_number_id' => 'required|string',
@@ -81,7 +116,7 @@ class WhatsappConfigController extends Controller
             'verify_token' => 'nullable|string',
         ];
 
-        if (!$config || !$config->app_secret) {
+        if (! $config || ! $config->app_secret) {
             $rules['app_secret'] = 'required|string';
         } else {
             $rules['app_secret'] = 'nullable|string';
@@ -93,12 +128,14 @@ class WhatsappConfigController extends Controller
             $data['webhook_url'] = WhatsappConfig::webhookCallbackUrl();
         }
 
-        if (!$config) {
+        $data['user_id'] = $userId;
+
+        if (! $config) {
             $data['created_by'] = $userId;
             $data['modified_by'] = $userId;
             $config = WhatsappConfig::create($data);
         } else {
-            if (!empty($data['app_secret'])) {
+            if (! empty($data['app_secret'])) {
                 $config->app_secret = $data['app_secret'];
             }
 
@@ -107,26 +144,26 @@ class WhatsappConfigController extends Controller
             $config->save();
         }
 
-        // Real inbound WhatsApp messages only reach this CRM when the app is
-        // subscribed to the WABA. Meta's webhook "Test" button works without it.
+        if (! $user->isAdmin()) {
+            $this->configResolver->revokeSharedAccess($user);
+        }
+
         $subscription = $this->ensureWabaAppSubscription($config);
 
         return response()->json([
             'status' => 'ok',
             'waba_subscribed' => $subscription['success'],
             'waba_subscribe_message' => $subscription['message'],
+            'whatsapp_config_mode' => WhatsappConfigResolver::MODE_OWN,
         ]);
     }
 
     /**
-     * Subscribe this Meta app to the WhatsApp Business Account so inbound
-     * messages are delivered to the configured webhook callback URL.
-     *
      * @return array{success: bool, message: string}
      */
     private function ensureWabaAppSubscription(WhatsappConfig $config): array
     {
-        if (!filled($config->business_account_id) || !filled($config->access_token)) {
+        if (! filled($config->business_account_id) || ! filled($config->access_token)) {
             return [
                 'success' => false,
                 'message' => 'Business Account ID or Access Token missing; skipped WABA subscription.',
@@ -147,24 +184,24 @@ class WhatsappConfigController extends Controller
 
             return [
                 'success' => false,
-                'message' => 'Failed to subscribe app to WABA: ' . ($response->body() ?: 'unknown error'),
+                'message' => 'Failed to subscribe app to WABA: '.($response->body() ?: 'unknown error'),
             ];
         } catch (\Throwable $e) {
             return [
                 'success' => false,
-                'message' => 'Failed to subscribe app to WABA: ' . $e->getMessage(),
+                'message' => 'Failed to subscribe app to WABA: '.$e->getMessage(),
             ];
         }
     }
 
-    /**
-     * Refresh WhatsApp message templates from Meta API and store in DB.
-     */
     public function refreshTemplates()
     {
-        $config = WhatsappConfig::current();
+        $user = Auth::user();
+        abort_unless($user && $user->isAdmin(), 403);
 
-        if (!$config || !$config->access_token || !$config->business_account_id) {
+        $config = WhatsappConfig::forUser($user);
+
+        if (! $config || ! $config->access_token || ! $config->business_account_id) {
             return response()->json([
                 'message' => 'WhatsApp configuration is incomplete. Please save App ID, Business Account ID and Access Token first.',
             ], 422);
@@ -186,7 +223,7 @@ class WhatsappConfigController extends Controller
             ], 500);
         }
 
-        if (!$response->successful()) {
+        if (! $response->successful()) {
             if (app()->environment(['local', 'development'])) {
                 return response()->json([
                     'message' => 'WhatsApp API responded with an error in local. Showing cached templates from database.',
@@ -205,8 +242,6 @@ class WhatsappConfigController extends Controller
         $data = $response->json('data') ?? [];
 
         foreach ($data as $tpl) {
-            // Only create / update core template fields.
-            // Do NOT touch use_for_module or is_active so manual mappings stay intact.
             $template = WhatsappMessageTemplate::firstOrNew([
                 'name' => $tpl['name'] ?? '',
             ]);
@@ -227,11 +262,10 @@ class WhatsappConfigController extends Controller
         ]);
     }
 
-    /**
-     * Update "Use For Module" mapping for a template.
-     */
     public function updateTemplateModule(WhatsappMessageTemplate $template, Request $request)
     {
+        abort_unless(Auth::user()?->isAdmin(), 403);
+
         $data = $request->validate([
             'use_for_module' => 'nullable|string|max:255',
         ]);
@@ -242,11 +276,10 @@ class WhatsappConfigController extends Controller
         return response()->json(['status' => 'ok']);
     }
 
-    /**
-     * Update active / inactive status for a template.
-     */
     public function updateTemplateStatus(WhatsappMessageTemplate $template, Request $request)
     {
+        abort_unless(Auth::user()?->isAdmin(), 403);
+
         $data = $request->validate([
             'is_active' => 'required|boolean',
         ]);
@@ -267,9 +300,9 @@ class WhatsappConfigController extends Controller
             'module_id' => 'nullable|integer',
         ]);
 
-        $service = app(WhatsAppService::class);
+        $service = app(WhatsAppService::class)->useConfig(WhatsappConfig::forUser(Auth::user()));
 
-        if (!$service->isConfigured()) {
+        if (! $service->isConfigured()) {
             return response()->json(['success' => false, 'message' => 'WhatsApp is not configured.'], 422);
         }
 
@@ -289,8 +322,10 @@ class WhatsappConfigController extends Controller
 
     public function logs(Request $request)
     {
+        abort_unless(Auth::user()?->isAdmin(), 403);
+
         $logs = WhatsappLog::with('sender')
-            ->when($request->module, fn($query) => $query->where('module', $request->module))
+            ->when($request->module, fn ($query) => $query->where('module', $request->module))
             ->latest()
             ->paginate(20);
 
