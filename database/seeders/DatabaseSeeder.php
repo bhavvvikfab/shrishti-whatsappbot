@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             SettingsSeeder::class,
             DealDemoSeeder::class,
             RoleSeeder::class,
+            AdminUserSeeder::class,
         ]);
     }
 }
