@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('campaign_logs', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('marketing_campaign_id')->nullable()->constrained()->onDelete('cascade');
-            $table->string('recipient_email')->nullable();
-            $table->string('recipient_phone')->nullable();
-            $table->string('status')->default('Sent'); // Sent, Failed
-            $table->text('error_message')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('campaign_logs')) {
+Schema::create('campaign_logs', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('marketing_campaign_id')->nullable()->constrained()->onDelete('cascade');
+                $table->string('recipient_email')->nullable();
+                $table->string('recipient_phone')->nullable();
+                $table->string('status')->default('Sent'); // Sent, Failed
+                $table->text('error_message')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

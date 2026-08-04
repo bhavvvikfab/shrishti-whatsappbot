@@ -11,25 +11,27 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('meta_lead_entries', function (Blueprint $table) {
-            $table->id();
-            $table->string('page_id')->nullable();
-            $table->string('form_id')->nullable();
-            $table->string('leadgen_id')->unique();
-            $table->string('ad_id')->nullable();
-            $table->string('adgroup_id')->nullable();
-            $table->string('campaign_id')->nullable();
-            $table->string('platform')->nullable();
-            $table->timestamp('created_time')->nullable();
-            $table->string('status')->default('received');
-            $table->longText('webhook_payload')->nullable();
-            $table->longText('lead_data')->nullable();
-            $table->timestamp('fetched_at')->nullable();
-            $table->text('fetch_error')->nullable();
-            $table->timestamps();
+        if (!Schema::hasTable('meta_lead_entries')) {
+Schema::create('meta_lead_entries', function (Blueprint $table) {
+                $table->id();
+                $table->string('page_id')->nullable();
+                $table->string('form_id')->nullable();
+                $table->string('leadgen_id')->unique();
+                $table->string('ad_id')->nullable();
+                $table->string('adgroup_id')->nullable();
+                $table->string('campaign_id')->nullable();
+                $table->string('platform')->nullable();
+                $table->timestamp('created_time')->nullable();
+                $table->string('status')->default('received');
+                $table->longText('webhook_payload')->nullable();
+                $table->longText('lead_data')->nullable();
+                $table->timestamp('fetched_at')->nullable();
+                $table->text('fetch_error')->nullable();
+                $table->timestamps();
 
-            $table->index(['page_id', 'form_id']);
-        });
+                $table->index(['page_id', 'form_id']);
+            });
+        }
     }
 
     /**

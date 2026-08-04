@@ -8,24 +8,26 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('user_logs', function (Blueprint $table) {
-            $table->id();
-            $table->string('subject_type')->nullable();
-            $table->unsignedBigInteger('subject_id')->nullable();
-            $table->string('action', 20);
-            $table->text('message');
-            $table->json('details')->nullable();
-            $table->foreignId('actioned_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->unsignedBigInteger('created_by')->nullable();
-            $table->unsignedBigInteger('updated_by')->nullable();
-            $table->unsignedBigInteger('deleted_by')->nullable();
-            $table->timestamps();
-            $table->softDeletes();
+        if (!Schema::hasTable('user_logs')) {
+Schema::create('user_logs', function (Blueprint $table) {
+                $table->id();
+                $table->string('subject_type')->nullable();
+                $table->unsignedBigInteger('subject_id')->nullable();
+                $table->string('action', 20);
+                $table->text('message');
+                $table->json('details')->nullable();
+                $table->foreignId('actioned_by')->nullable()->constrained('users')->nullOnDelete();
+                $table->unsignedBigInteger('created_by')->nullable();
+                $table->unsignedBigInteger('updated_by')->nullable();
+                $table->unsignedBigInteger('deleted_by')->nullable();
+                $table->timestamps();
+                $table->softDeletes();
 
-            $table->index(['subject_type', 'subject_id']);
-            $table->index('action');
-            $table->index('created_at');
-        });
+                $table->index(['subject_type', 'subject_id']);
+                $table->index('action');
+                $table->index('created_at');
+            });
+        }
     }
 
     public function down(): void

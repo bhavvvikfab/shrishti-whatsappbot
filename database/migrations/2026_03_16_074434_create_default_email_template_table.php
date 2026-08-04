@@ -11,25 +11,27 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('default_email_template', function (Blueprint $table) {
-            $table->id();                       // id
-            $table->string('name');             // template name
-            $table->longText('content');        // email HTML / text content
+        if (!Schema::hasTable('default_email_template')) {
+Schema::create('default_email_template', function (Blueprint $table) {
+                $table->id();                       // id
+                $table->string('name');             // template name
+                $table->longText('content');        // email HTML / text content
 
-            // audit fields
-            $table->unsignedBigInteger('created_by')->nullable();
-            $table->unsignedBigInteger('modified_by')->nullable();
-            $table->unsignedBigInteger('deleted_by')->nullable();
+                // audit fields
+                $table->unsignedBigInteger('created_by')->nullable();
+                $table->unsignedBigInteger('modified_by')->nullable();
+                $table->unsignedBigInteger('deleted_by')->nullable();
 
-            // timestamps & soft delete
-            $table->timestamps();   // created_at, updated_at
-            $table->softDeletes();  // deleted_at
+                // timestamps & soft delete
+                $table->timestamps();   // created_at, updated_at
+                $table->softDeletes();  // deleted_at
 
-            // If you want foreign keys to users, uncomment:
-            // $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
-            // $table->foreign('modified_by')->references('id')->on('users')->nullOnDelete();
-            // $table->foreign('deleted_by')->references('id')->on('users')->nullOnDelete();
-        });
+                // If you want foreign keys to users, uncomment:
+                // $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
+                // $table->foreign('modified_by')->references('id')->on('users')->nullOnDelete();
+                // $table->foreign('deleted_by')->references('id')->on('users')->nullOnDelete();
+            });
+        }
     }
 
     /**

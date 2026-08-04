@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('quotation_items', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('quotation_id');
-            $table->string('description');
-            $table->integer('quantity')->default(1);
-            $table->decimal('unit_price', 12, 2)->default(0);
-            $table->decimal('total_price', 12, 2)->default(0);
-            $table->timestamps();
+        if (!Schema::hasTable('quotation_items')) {
+Schema::create('quotation_items', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('quotation_id');
+                $table->string('description');
+                $table->integer('quantity')->default(1);
+                $table->decimal('unit_price', 12, 2)->default(0);
+                $table->decimal('total_price', 12, 2)->default(0);
+                $table->timestamps();
 
-            $table->index(['quotation_id']);
-        });
+                $table->index(['quotation_id']);
+            });
+        }
     }
 
     /**

@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('statuses', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('type')->nullable(); // e.g. lead, quotation, deal
-            $table->string('color')->nullable();
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('statuses')) {
+Schema::create('statuses', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->string('type')->nullable(); // e.g. lead, quotation, deal
+                $table->string('color')->nullable();
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
+            });
+        }
     }
 
     /**

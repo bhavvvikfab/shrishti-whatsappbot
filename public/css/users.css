@@ -220,10 +220,10 @@
 #usersTable .users-action-group {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: center;
     gap: 0.5rem;
     flex-wrap: wrap;
-    min-width: 220px;
+    min-width: 120px;
 }
 
 #usersTable .users-icon-btn {

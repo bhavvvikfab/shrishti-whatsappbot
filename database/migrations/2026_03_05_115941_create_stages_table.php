@@ -15,14 +15,16 @@ return new class extends Migration
             return;
         }
 
-        Schema::create('stages', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->unsignedInteger('sort_order')->default(0);
-            $table->boolean('is_default')->default(false);
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('stages')) {
+Schema::create('stages', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->unsignedInteger('sort_order')->default(0);
+                $table->boolean('is_default')->default(false);
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
+            });
+        }
     }
 
     /**

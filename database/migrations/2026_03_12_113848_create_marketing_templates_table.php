@@ -11,23 +11,25 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('marketing_templates', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('template_name');
-            $table->enum('status', ['active', 'inactive'])->default('active');
+        if (!Schema::hasTable('marketing_templates')) {
+Schema::create('marketing_templates', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->string('template_name');
+                $table->enum('status', ['active', 'inactive'])->default('active');
 
-            $table->string('image_1')->nullable();
-            $table->string('image_2')->nullable();
-            $table->string('image_3')->nullable();
+                $table->string('image_1')->nullable();
+                $table->string('image_2')->nullable();
+                $table->string('image_3')->nullable();
 
-            $table->foreignId('created_by')->nullable()->constrained('users');
-            $table->foreignId('updated_by')->nullable()->constrained('users');
-            $table->foreignId('deleted_by')->nullable()->constrained('users');
+                $table->foreignId('created_by')->nullable()->constrained('users');
+                $table->foreignId('updated_by')->nullable()->constrained('users');
+                $table->foreignId('deleted_by')->nullable()->constrained('users');
 
-            $table->softDeletes();
-            $table->timestamps();
-        });
+                $table->softDeletes();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

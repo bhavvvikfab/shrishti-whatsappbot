@@ -19,7 +19,7 @@ class WhatsappConfigController extends Controller
     public function settingsPage()
     {
         $user = Auth::user();
-        abort_unless($user && ($user->isAdmin() || $user->hasMatrixPermission('view_whatsapp')), 403);
+        abort_unless($user && ($user->isAdmin() || $user->canUseWhatsappInbox()), 403);
 
         $whatsappModuleEnabled = Setting::isEnabled('whatsapp_module_enabled', true);
         $mode = $this->configResolver->resolveMode($user);

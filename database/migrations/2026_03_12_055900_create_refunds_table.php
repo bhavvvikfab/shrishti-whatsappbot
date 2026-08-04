@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('refunds', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('booking_id')->constrained()->onDelete('cascade');
-            $table->decimal('amount', 15, 2);
-            $table->date('refund_date');
-            $table->string('payment_method')->nullable();
-            $table->string('transaction_id')->nullable();
-            $table->string('status')->default('pending'); // pending, processed, failed
-            $table->text('notes')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('refunds')) {
+Schema::create('refunds', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('booking_id')->constrained()->onDelete('cascade');
+                $table->decimal('amount', 15, 2);
+                $table->date('refund_date');
+                $table->string('payment_method')->nullable();
+                $table->string('transaction_id')->nullable();
+                $table->string('status')->default('pending'); // pending, processed, failed
+                $table->text('notes')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

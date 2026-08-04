@@ -42,7 +42,16 @@ class UserController extends ApiBaseController
             Permission::findOrCreate($permission, 'web');
         }
 
-        $user->syncPermissions($permissions);
+        // Preserve non-matrix permissions (like use_shared_whatsapp_config)
+        $allowedMatrixNames = $this->allowedMatrixPermissionNames();
+        $nonMatrixPermissions = $user->permissions()
+            ->whereNotIn('name', $allowedMatrixNames)
+            ->pluck('name')
+            ->toArray();
+            
+        $allPermissions = array_merge($permissions, $nonMatrixPermissions);
+
+        $user->syncPermissions($allPermissions);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
@@ -120,7 +129,7 @@ class UserController extends ApiBaseController
     {
         $search = trim((string) $request->get('search', ''));
 
-        $users = User::with('roles')
+        $users = User::with(['roles', 'permissions', 'whatsappConfig'])
             ->role('staff')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
@@ -132,6 +141,11 @@ class UserController extends ApiBaseController
             })
             ->latest()
             ->paginate(10);
+
+        $users->getCollection()->transform(function ($user) {
+            $user->whatsapp_bot_mode = $user->whatsappConfigMode();
+            return $user;
+        });
 
         // dd($users);
         return response()->json([

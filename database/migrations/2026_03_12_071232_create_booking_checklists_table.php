@@ -11,21 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('booking_checklists', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('booking_id')->constrained()->onDelete('cascade');
-            $table->string('task_name');
-            $table->boolean('is_completed')->default(false);
-            $table->timestamp('completed_at')->nullable();
-            $table->text('notes')->nullable();
+        if (!Schema::hasTable('booking_checklists')) {
+Schema::create('booking_checklists', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('booking_id')->constrained()->onDelete('cascade');
+                $table->string('task_name');
+                $table->boolean('is_completed')->default(false);
+                $table->timestamp('completed_at')->nullable();
+                $table->text('notes')->nullable();
             
-            $table->foreignId('created_by')->nullable()->constrained('users');
-            $table->foreignId('updated_by')->nullable()->constrained('users');
-            $table->foreignId('deleted_by')->nullable()->constrained('users');
+                $table->foreignId('created_by')->nullable()->constrained('users');
+                $table->foreignId('updated_by')->nullable()->constrained('users');
+                $table->foreignId('deleted_by')->nullable()->constrained('users');
 
-            $table->softDeletes();
-            $table->timestamps();
-        });
+                $table->softDeletes();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

@@ -11,22 +11,24 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('support_tickets', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('customer_id')->constrained()->onDelete('cascade');
-            $table->string('ticket_name');
-            $table->enum('priority', ['Low', 'Medium', 'High', 'Urgent'])->default('Medium');
-            $table->enum('status', ['Open', 'In Progress', 'Resolved', 'Closed'])->default('Open');
-            $table->text('description')->nullable();
+        if (!Schema::hasTable('support_tickets')) {
+Schema::create('support_tickets', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('customer_id')->constrained()->onDelete('cascade');
+                $table->string('ticket_name');
+                $table->enum('priority', ['Low', 'Medium', 'High', 'Urgent'])->default('Medium');
+                $table->enum('status', ['Open', 'In Progress', 'Resolved', 'Closed'])->default('Open');
+                $table->text('description')->nullable();
             
-            // add created_by and updated_by and deleted_by fields
-            $table->foreignId('created_by')->nullable()->constrained('users');
-            $table->foreignId('updated_by')->nullable()->constrained('users');
-            $table->foreignId('deleted_by')->nullable()->constrained('users');
+                // add created_by and updated_by and deleted_by fields
+                $table->foreignId('created_by')->nullable()->constrained('users');
+                $table->foreignId('updated_by')->nullable()->constrained('users');
+                $table->foreignId('deleted_by')->nullable()->constrained('users');
 
-            $table->softDeletes();
-            $table->timestamps();
-        });
+                $table->softDeletes();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

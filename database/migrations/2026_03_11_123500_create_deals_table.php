@@ -8,20 +8,22 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('deals', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('customer_id');
-            $table->string('title');
-            $table->decimal('amount', 12, 2)->default(0);
-            $table->unsignedBigInteger('currency_id');
-            $table->unsignedBigInteger('status_id');
-            $table->date('expected_close_date')->nullable();
-            $table->unsignedBigInteger('assigned_user_id');
-            $table->timestamps();
+        if (!Schema::hasTable('deals')) {
+Schema::create('deals', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('customer_id');
+                $table->string('title');
+                $table->decimal('amount', 12, 2)->default(0);
+                $table->unsignedBigInteger('currency_id');
+                $table->unsignedBigInteger('status_id');
+                $table->date('expected_close_date')->nullable();
+                $table->unsignedBigInteger('assigned_user_id');
+                $table->timestamps();
 
-            $table->index(['customer_id', 'status_id']);
-            $table->index(['currency_id', 'assigned_user_id']);
-        });
+                $table->index(['customer_id', 'status_id']);
+                $table->index(['currency_id', 'assigned_user_id']);
+            });
+        }
     }
 
     public function down(): void

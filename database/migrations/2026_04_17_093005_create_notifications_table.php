@@ -10,16 +10,18 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('notifications', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('user_id')->nullable();
-            $table->string('notification_text')->nullable();
-            $table->tinyInteger('is_read')->default(0);
-            $table->timestamps();
+        if (!Schema::hasTable('notifications')) {
+Schema::create('notifications', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('user_id')->nullable();
+                $table->string('notification_text')->nullable();
+                $table->tinyInteger('is_read')->default(0);
+                $table->timestamps();
             
-            // Add foreign key constraint
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-        });
+                // Add foreign key constraint
+                $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            });
+        }
     }
 
     /**

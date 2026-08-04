@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('documents', function (Blueprint $table) {
-            $table->id();
-            $table->string('title');
-            $table->string('file_path');
-            $table->string('file_type')->nullable();
-            $table->unsignedBigInteger('documentable_id')->nullable();
-            $table->string('documentable_type')->nullable();
-            $table->foreignId('user_id')->constrained();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('documents')) {
+Schema::create('documents', function (Blueprint $table) {
+                $table->id();
+                $table->string('title');
+                $table->string('file_path');
+                $table->string('file_type')->nullable();
+                $table->unsignedBigInteger('documentable_id')->nullable();
+                $table->string('documentable_type')->nullable();
+                $table->foreignId('user_id')->constrained();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

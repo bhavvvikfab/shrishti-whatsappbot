@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('itinerary_days', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('itinerary_id');
-            $table->integer('day_number');
-            $table->string('title');
-            $table->text('description')->nullable();
-            $table->string('meals')->nullable();
-            $table->timestamps();
+        if (!Schema::hasTable('itinerary_days')) {
+Schema::create('itinerary_days', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('itinerary_id');
+                $table->integer('day_number');
+                $table->string('title');
+                $table->text('description')->nullable();
+                $table->string('meals')->nullable();
+                $table->timestamps();
 
-            $table->index('itinerary_id');
-        });
+                $table->index('itinerary_id');
+            });
+        }
     }
 
     /**
