@@ -388,5 +388,44 @@ setTimeout(pollInboxConversations, 1500);
 document.addEventListener('visibilitychange', () => {
     if (!document.hidden) pollInboxConversations();
 });
+
+// Horizontal scroll for status tabs using mouse wheel and drag
+document.addEventListener('DOMContentLoaded', () => {
+    const slider = document.querySelector('.wa-status-tabs');
+    if (!slider) return;
+
+    slider.addEventListener('wheel', (e) => {
+        if (e.deltaY !== 0) {
+            e.preventDefault();
+            slider.scrollLeft += e.deltaY;
+        }
+    });
+
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+
+    slider.addEventListener('mousedown', (e) => {
+        isDown = true;
+        startX = e.pageX - slider.offsetLeft;
+        scrollLeft = slider.scrollLeft;
+        slider.style.cursor = 'grabbing';
+    });
+    slider.addEventListener('mouseleave', () => {
+        isDown = false;
+        slider.style.cursor = 'pointer';
+    });
+    slider.addEventListener('mouseup', () => {
+        isDown = false;
+        slider.style.cursor = 'pointer';
+    });
+    slider.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - slider.offsetLeft;
+        const walk = (x - startX) * 2;
+        slider.scrollLeft = scrollLeft - walk;
+    });
+});
 </script>
 @endpush
