@@ -31,6 +31,7 @@ class WhatsappWebhookController extends Controller
             'ip' => $request->ip(),
         ]);
 
+        // Meta sends hub.mode, hub.verify_token, hub.challenge (PHP may expose them as hub_*)
         $mode = $request->query('hub.mode') ?? $request->query('hub_mode');
         $token = $request->query('hub.verify_token') ?? $request->query('hub_verify_token');
         $challenge = $request->query('hub.challenge') ?? $request->query('hub_challenge');
@@ -96,39 +97,28 @@ class WhatsappWebhookController extends Controller
         $entries = $payload['entry'] ?? [];
         $messagesProcessed = 0;
         $statusRows = 0;
-        $changeFields = [];
+        $crmPhoneId = WhatsappConfig::query()->value('phone_number_id');
 
         foreach ($entries as $entry) {
             foreach ($entry['changes'] ?? [] as $change) {
                 $field = $change['field'] ?? null;
                 $value = $change['value'] ?? [];
-                $changeFields[] = $field;
 
                 $webhookPhoneId = $value['metadata']['phone_number_id'] ?? null;
-                $config = WhatsappConfig::byPhoneNumberId($webhookPhoneId) ?? WhatsappConfig::adminConfig();
-
-                if ($config) {
-                    $this->inboxService->useConfig($config);
-                } else {
-                    Log::warning('WhatsApp webhook: no CRM config for phone_number_id', [
-                        'webhook_phone_number_id' => $webhookPhoneId,
-                        'change_field' => $field,
-                    ]);
-                    $waLog->warning('config_not_found', [
-                        'webhook_phone_number_id' => $webhookPhoneId,
-                        'change_field' => $field,
-                    ]);
+                $matchedConfig = WhatsappConfig::byPhoneNumberId($webhookPhoneId);
+                if ($matchedConfig) {
+                    $this->inboxService->useConfig($matchedConfig);
                 }
 
-                if ($webhookPhoneId && $config && (string) $webhookPhoneId !== (string) $config->phone_number_id) {
-                    Log::warning('WhatsApp webhook phone_number_id differs from matched CRM config', [
+                if ($webhookPhoneId && $crmPhoneId && (string) $webhookPhoneId !== (string) $crmPhoneId && ! $matchedConfig) {
+                    Log::warning('WhatsApp webhook phone_number_id differs from CRM whatsapp_config', [
                         'webhook_phone_number_id' => $webhookPhoneId,
-                        'crm_phone_number_id' => $config->phone_number_id,
+                        'crm_phone_number_id' => $crmPhoneId,
                         'change_field' => $field,
                     ]);
                     $waLog->warning('phone_number_id_mismatch', [
                         'webhook_phone_number_id' => $webhookPhoneId,
-                        'crm_phone_number_id' => $config->phone_number_id,
+                        'crm_phone_number_id' => $crmPhoneId,
                         'change_field' => $field,
                     ]);
                 }
@@ -154,6 +144,7 @@ class WhatsappWebhookController extends Controller
                     $statusRows++;
                     $wamid = $status['id'] ?? null;
                     $newStatus = strtolower($status['status'] ?? '');
+                    $timestamp = $status['timestamp'] ?? null;
 
                     if ($wamid && in_array($newStatus, ['delivered', 'read', 'failed'], true)) {
                         WhatsappLog::where('meta_message_id', $wamid)
@@ -178,20 +169,12 @@ class WhatsappWebhookController extends Controller
                     }
                 }
 
-                $incomingMessages = $value['messages'] ?? [];
-                if ($field === 'messages' && $incomingMessages === []) {
-                    $waLog->info('messages_field_empty', [
-                        'phone_number_id' => $webhookPhoneId,
-                    ]);
-                }
-
-                foreach ($incomingMessages as $message) {
+                foreach ($value['messages'] ?? [] as $message) {
+                    Log::info('WhatsApp incoming message', $message);
                     Log::info('WhatsApp incoming message', [
                         'from' => $message['from'] ?? null,
                         'type' => $message['type'] ?? null,
                         'id' => $message['id'] ?? null,
-                        'field' => $field,
-                        'phone_number_id' => $webhookPhoneId,
                     ]);
                     $waLog->info('incoming_message_row', [
                         'from' => $message['from'] ?? null,
@@ -201,6 +184,7 @@ class WhatsappWebhookController extends Controller
                         'phone_number_id' => $webhookPhoneId,
                     ]);
 
+                    // Extract contact data from the webhook payload
                     $contacts = $value['contacts'] ?? [];
                     $contactMap = [];
                     foreach ($contacts as $contact) {
@@ -211,21 +195,14 @@ class WhatsappWebhookController extends Controller
                     $contactData = $contactMap[$message['from'] ?? ''] ?? [];
 
                     try {
-                        $stored = $this->inboxService->processIncomingMessage($message, $contactData, $webhookPhoneId);
+                        $stored = $this->inboxService->processIncomingMessage($message, $contactData);
                         if ($stored) {
                             $messagesProcessed++;
-                        } else {
-                            $waLog->warning('incoming_message_not_stored', [
-                                'message_id' => $message['id'] ?? null,
-                                'from' => $message['from'] ?? null,
-                                'type' => $message['type'] ?? null,
-                            ]);
                         }
                     } catch (\Throwable $e) {
                         Log::error('WhatsApp message processing error', [
                             'error' => $e->getMessage(),
                             'message_id' => $message['id'] ?? null,
-                            'trace' => $e->getTraceAsString(),
                         ]);
                         $waLog->error('processIncomingMessage_failed', [
                             'error' => $e->getMessage(),
@@ -239,7 +216,6 @@ class WhatsappWebhookController extends Controller
         $waLog->info('webhook_complete', [
             'messages_saved' => $messagesProcessed,
             'status_rows' => $statusRows,
-            'change_fields' => array_values(array_unique($changeFields)),
         ]);
 
         return response()->json(['status' => 'ok']);

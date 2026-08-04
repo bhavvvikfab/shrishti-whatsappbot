@@ -111,7 +111,7 @@ class WhatsAppInboxService
     /**
      * Process an incoming webhook message from Meta.
      */
-    public function processIncomingMessage(array $messageData, array $contactData = [], ?string $webhookPhoneId = null): ?WhatsappMessage
+    public function processIncomingMessage(array $messageData, array $contactData = []): ?WhatsappMessage
     {
         $phone = $messageData['from'] ?? null;
         if (!$phone) {
@@ -119,7 +119,6 @@ class WhatsAppInboxService
         }
 
         $phone = $this->normalizePhone($phone);
-        $phoneNumberId = $webhookPhoneId ?? $this->config()?->phone_number_id;
         $contactName = $contactData['profile']['name'] ?? null;
         $metaMessageId = $messageData['id'] ?? null;
         $messageType = $messageData['type'] ?? 'text';
@@ -252,30 +251,17 @@ class WhatsAppInboxService
                 $messageText = '[Unsupported message type: ' . $messageType . ']';
         }
 
-        // Find or create conversation (scoped to business phone number when known).
-        $conversationQuery = WhatsappConversation::query()->where('phone_number', $phone);
-
-        if (filled($phoneNumberId)) {
-            $conversationQuery->where(function ($query) use ($phoneNumberId) {
-                $query->where('whatsapp_phone_id', $phoneNumberId)
-                    ->orWhereNull('whatsapp_phone_id');
-            })->orderByRaw('CASE WHEN whatsapp_phone_id = ? THEN 0 ELSE 1 END', [$phoneNumberId]);
-        }
-
-        $conversation = $conversationQuery->first();
-
-        if (! $conversation) {
-            $conversation = WhatsappConversation::create([
-                'phone_number' => $phone,
+        // Find or create conversation
+        $conversation = WhatsappConversation::firstOrCreate(
+            ['phone_number' => $phone],
+            [
                 'contact_name' => $contactName,
                 'status' => 'open',
-                'whatsapp_phone_id' => $phoneNumberId,
-            ]);
-        } elseif (filled($phoneNumberId) && blank($conversation->whatsapp_phone_id)) {
-            $conversation->update(['whatsapp_phone_id' => $phoneNumberId]);
-        }
+                'whatsapp_phone_id' => $this->config()?->phone_number_id,
+            ]
+        );
 
-        if ($contactName && ! $conversation->contact_name) {
+        if ($contactName && !$conversation->contact_name) {
             $conversation->update(['contact_name' => $contactName]);
         }
 
