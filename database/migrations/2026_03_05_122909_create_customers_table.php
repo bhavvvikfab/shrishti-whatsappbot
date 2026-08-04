@@ -11,20 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('customers', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('email')->nullable();
-            $table->string('phone')->nullable();
-            $table->date('dob')->nullable();
-            $table->string('type')->nullable(); // Individual, Corporate, etc.
-            $table->unsignedBigInteger('country_id')->nullable();
-            $table->unsignedBigInteger('city_id')->nullable();
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
+        if (!Schema::hasTable('customers')) {
+Schema::create('customers', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->string('email')->nullable();
+                $table->string('phone')->nullable();
+                $table->date('dob')->nullable();
+                $table->string('type')->nullable(); // Individual, Corporate, etc.
+                $table->unsignedBigInteger('country_id')->nullable();
+                $table->unsignedBigInteger('city_id')->nullable();
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
 
-            $table->index(['country_id', 'city_id']);
-        });
+                $table->index(['country_id', 'city_id']);
+            });
+        }
     }
 
     /**

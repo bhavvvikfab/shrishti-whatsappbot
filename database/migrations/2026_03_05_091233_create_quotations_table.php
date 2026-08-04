@@ -11,19 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('quotations', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('lead_id');
-            $table->unsignedBigInteger('tour_package_id')->nullable();
-            $table->string('reference')->unique();
-            $table->enum('status', ['quotation', 'estimate', 'confirmed', 'cancelled'])->default('quotation');
-            $table->decimal('total_amount', 12, 2)->default(0);
-            $table->date('valid_until')->nullable();
-            $table->text('notes')->nullable();
-            $table->timestamps();
+        if (!Schema::hasTable('quotations')) {
+Schema::create('quotations', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('lead_id');
+                $table->unsignedBigInteger('tour_package_id')->nullable();
+                $table->string('reference')->unique();
+                $table->enum('status', ['quotation', 'estimate', 'confirmed', 'cancelled'])->default('quotation');
+                $table->decimal('total_amount', 12, 2)->default(0);
+                $table->date('valid_until')->nullable();
+                $table->text('notes')->nullable();
+                $table->timestamps();
 
-            $table->index(['lead_id', 'tour_package_id']);
-        });
+                $table->index(['lead_id', 'tour_package_id']);
+            });
+        }
     }
 
     /**

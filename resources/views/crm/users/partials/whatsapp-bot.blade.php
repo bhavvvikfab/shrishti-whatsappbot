@@ -1,5 +1,8 @@
 @php
-    $selectedMode = old('whatsapp_bot_mode', $whatsappBotMode ?? 'none');
+    $selectedMode = old('whatsapp_bot_mode', $whatsappBotMode ?? 'shared');
+    if ($selectedMode === 'none') {
+        $selectedMode = 'shared';
+    }
     $staffConfig = $staffWhatsappConfig ?? null;
 @endphp
 
@@ -10,14 +13,14 @@
     </p>
 
     <div class="d-flex flex-column gap-2 mb-3">
-        <label class="form-check d-flex align-items-start gap-2">
+        <!-- <label class="form-check d-flex align-items-start gap-2">
             <input type="radio" class="form-check-input mt-1" name="whatsapp_bot_mode" value="none"
                 {{ $selectedMode === 'none' ? 'checked' : '' }}>
             <span>
                 <span class="fw-semibold">No bot yet</span>
                 <span class="d-block small text-muted">Staff can add their own config later, or you can grant shared access.</span>
             </span>
-        </label>
+        </label> -->
 
         <label class="form-check d-flex align-items-start gap-2">
             <input type="radio" class="form-check-input mt-1" name="whatsapp_bot_mode" value="shared"

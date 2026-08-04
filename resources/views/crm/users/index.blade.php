@@ -53,9 +53,10 @@
                                 <th>Name</th>
                                 <th class="d-none d-md-table-cell">Email</th>
                                 <th class="text-center d-none d-md-table-cell">Status</th>
+                                <th class="text-center d-none d-md-table-cell">WhatsApp Bot</th>
                                 {{-- <th style="width: 150px;">Status</th> --}}
                                 <th class="d-none d-md-table-cell">Created At</th>
-                                <th class="text-center d-none d-md-table-cell" style="min-width: 220px;">Action</th>
+                                <th class="text-center d-none d-md-table-cell" style="min-width: 120px;">Action</th>
                                 <th class="text-center d-md-none" style="width: 80px;">Action</th>
                             </tr>
                         </thead>

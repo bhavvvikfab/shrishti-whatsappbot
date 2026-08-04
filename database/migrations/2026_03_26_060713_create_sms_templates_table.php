@@ -10,20 +10,22 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('sms_templates', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->enum('status', ['active', 'inactive'])->default('active');
-            $table->text('content');
-            // Audit trail columns
-            $table->unsignedBigInteger('created_by')->nullable();
-            $table->unsignedBigInteger('updated_by')->nullable();
-            $table->unsignedBigInteger('deleted_by')->nullable();
+        if (!Schema::hasTable('sms_templates')) {
+            Schema::create('sms_templates', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->enum('status', ['active', 'inactive'])->default('active');
+                $table->text('content');
+                // Audit trail columns
+                $table->unsignedBigInteger('created_by')->nullable();
+                $table->unsignedBigInteger('updated_by')->nullable();
+                $table->unsignedBigInteger('deleted_by')->nullable();
 
-            // Soft delete column
-            $table->softDeletes();
-            $table->timestamps();
-        });
+                // Soft delete column
+                $table->softDeletes();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

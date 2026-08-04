@@ -11,21 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('marketing_campaigns', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->foreignId('marketing_template_id')->constrained()->onDelete('cascade');
-            $table->string('audience_type'); // Leads, Customers, Agents
-            $table->timestamp('sent_at')->nullable();
-            $table->string('status')->default('Draft'); // Draft, Scheduled, Sending, Completed, Failed
+        if (!Schema::hasTable('marketing_campaigns')) {
+Schema::create('marketing_campaigns', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->foreignId('marketing_template_id')->constrained()->onDelete('cascade');
+                $table->string('audience_type'); // Leads, Customers, Agents
+                $table->timestamp('sent_at')->nullable();
+                $table->string('status')->default('Draft'); // Draft, Scheduled, Sending, Completed, Failed
 
-            $table->foreignId('created_by')->nullable()->constrained('users');
-            $table->foreignId('updated_by')->nullable()->constrained('users');
-            $table->foreignId('deleted_by')->nullable()->constrained('users');
+                $table->foreignId('created_by')->nullable()->constrained('users');
+                $table->foreignId('updated_by')->nullable()->constrained('users');
+                $table->foreignId('deleted_by')->nullable()->constrained('users');
 
-            $table->softDeletes();
-            $table->timestamps();
-        });
+                $table->softDeletes();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

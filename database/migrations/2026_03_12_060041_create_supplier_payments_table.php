@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('supplier_payments', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('supplier_payable_id')->constrained()->onDelete('cascade');
-            $table->decimal('amount', 15, 2);
-            $table->date('payment_date');
-            $table->string('payment_method')->nullable();
-            $table->string('transaction_id')->nullable();
-            $table->text('notes')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('supplier_payments')) {
+Schema::create('supplier_payments', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('supplier_payable_id')->constrained()->onDelete('cascade');
+                $table->decimal('amount', 15, 2);
+                $table->date('payment_date');
+                $table->string('payment_method')->nullable();
+                $table->string('transaction_id')->nullable();
+                $table->text('notes')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

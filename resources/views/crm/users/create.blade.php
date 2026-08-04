@@ -30,8 +30,9 @@
 
                     @csrf
 
-                    <div class="row g-3">
-                        <!-- Name -->
+                    <div id="step-1">
+                        <div class="row g-3">
+                            <!-- Name -->
                         <div class="col-12">
                             <label class="form-label d-flex align-items-center gap-2" for="name">
                                 <i class="bi bi-person-fill"></i> Name <span class="text-danger">*</span>
@@ -110,25 +111,36 @@
                             @error('address')
                                 <div class="staff-validation">{{ $message }}</div>
                             @enderror
+                            </div>
+                        </div>
+
+                        <!-- Step 1 Actions -->
+                        <div class="mt-4 pt-4 border-top d-flex flex-sm-row justify-content-end gap-2 form-actions">
+                            <a href="{{ route('users.index') }}" class="btn btn-outline-dark-blue">Cancel</a>
+                            <button type="button" class="btn btn-dark-blue" id="btnNextStep">Next <i class="fa-solid fa-angle-right ms-1"></i></button>
                         </div>
                     </div>
 
-                    <!-- Form Actions -->
-                    <div class="mt-4 pt-4 border-top d-flex flex-sm-row justify-content-end gap-2 form-actions">
-                        <a href="{{ route('users.index') }}" class="btn btn-outline-dark-blue">Cancel</a>
-                        <button type="submit" class="btn btn-dark-blue">Submit</button>
-                    </div>
+                    <div id="step-2" style="display: none;">
+
 
                     <!-- Permissions Section -->
-                    @include('crm.users.partials.permission', [
+                    {{-- @include('crm.users.partials.permission', [
                         'permissionMatrix' => $permissionMatrix ?? [],
                         'permissionActions' => $permissionActions ?? [],
                         'selectedPermissions' => old('permissions', []),
-                    ])
+                    ]) --}}
 
                     @include('crm.users.partials.whatsapp-bot', [
                         'whatsappBotMode' => old('whatsapp_bot_mode', 'none'),
                     ])
+
+                        <!-- Step 2 Actions -->
+                        <div class="mt-4 pt-4 border-top d-flex flex-sm-row justify-content-end gap-2 form-actions">
+                            <button type="button" class="btn btn-outline-dark-blue" id="btnPrevStep"><i class="fa-solid fa-angle-left me-1"></i> Back</button>
+                            <button type="submit" class="btn btn-dark-blue">Submit</button>
+                        </div>
+                    </div>
                 </form>
             </div>
         </div>
@@ -206,6 +218,46 @@
             fields.forEach(field => {
                 field.addEventListener('input', () => validateField(field));
                 field.addEventListener('blur', () => validateField(field));
+            });
+        }
+
+        // Step navigation logic
+        const btnNextStep = document.getElementById('btnNextStep');
+        const btnPrevStep = document.getElementById('btnPrevStep');
+        const step1 = document.getElementById('step-1');
+        const step2 = document.getElementById('step-2');
+
+        if (btnNextStep && btnPrevStep) {
+            btnNextStep.addEventListener('click', function() {
+                // Validate required fields in Step 1
+                let isValid = true;
+                const requiredFields = ['name', 'email', 'password', 'phone', 'address'];
+                
+                requiredFields.forEach(fieldName => {
+                    const field = document.getElementById(fieldName);
+                    if (field) {
+                        validateField(field);
+                        if (field.classList.contains('is-invalid')) {
+                            isValid = false;
+                        }
+                    }
+                });
+
+                if (isValid) {
+                    step1.style.display = 'none';
+                    step2.style.display = 'block';
+                } else {
+                    // Scroll to first error
+                    const firstError = document.querySelector('.is-invalid');
+                    if (firstError) {
+                        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            });
+
+            btnPrevStep.addEventListener('click', function() {
+                step2.style.display = 'none';
+                step1.style.display = 'block';
             });
         }
     });

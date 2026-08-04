@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('cities', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('country_id')->nullable();
-            $table->string('name');
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
+        if (!Schema::hasTable('cities')) {
+Schema::create('cities', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('country_id')->nullable();
+                $table->string('name');
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
 
-            $table->index('country_id');
-        });
+                $table->index('country_id');
+            });
+        }
     }
 
     /**

@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('follow_up_status_histories', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('follow_up_id')->constrained('follow_ups')->cascadeOnDelete();
-            $table->string('status');
-            $table->text('comment')->nullable();
-            $table->unsignedBigInteger('updated_by')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('follow_up_status_histories')) {
+Schema::create('follow_up_status_histories', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('follow_up_id')->constrained('follow_ups')->cascadeOnDelete();
+                $table->string('status');
+                $table->text('comment')->nullable();
+                $table->unsignedBigInteger('updated_by')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

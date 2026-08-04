@@ -11,22 +11,24 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('booking_amendments', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('booking_id')->constrained()->onDelete('cascade');
-            $table->string('type'); // reschedule, pax_change, itinerary_update, other
-            $table->json('old_data')->nullable();
-            $table->json('new_data')->nullable();
-            $table->text('reason')->nullable();
-            $table->decimal('amendment_fee', 15, 2)->default(0); 
+        if (!Schema::hasTable('booking_amendments')) {
+Schema::create('booking_amendments', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('booking_id')->constrained()->onDelete('cascade');
+                $table->string('type'); // reschedule, pax_change, itinerary_update, other
+                $table->json('old_data')->nullable();
+                $table->json('new_data')->nullable();
+                $table->text('reason')->nullable();
+                $table->decimal('amendment_fee', 15, 2)->default(0); 
 
-            $table->foreignId('created_by')->nullable()->constrained('users');
-            $table->foreignId('updated_by')->nullable()->constrained('users');
-            $table->foreignId('deleted_by')->nullable()->constrained('users');
+                $table->foreignId('created_by')->nullable()->constrained('users');
+                $table->foreignId('updated_by')->nullable()->constrained('users');
+                $table->foreignId('deleted_by')->nullable()->constrained('users');
             
-            $table->softDeletes();
-            $table->timestamps();
-        });
+                $table->softDeletes();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

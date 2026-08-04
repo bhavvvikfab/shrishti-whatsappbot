@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('supplier_payables', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('supplier_id')->constrained()->onDelete('cascade');
-            $table->foreignId('booking_id')->constrained()->onDelete('cascade');
-            $table->decimal('amount', 15, 2);
-            $table->date('due_date');
-            $table->string('status')->default('unpaid'); // unpaid, paid, partially_paid
-            $table->text('notes')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('supplier_payables')) {
+Schema::create('supplier_payables', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('supplier_id')->constrained()->onDelete('cascade');
+                $table->foreignId('booking_id')->constrained()->onDelete('cascade');
+                $table->decimal('amount', 15, 2);
+                $table->date('due_date');
+                $table->string('status')->default('unpaid'); // unpaid, paid, partially_paid
+                $table->text('notes')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

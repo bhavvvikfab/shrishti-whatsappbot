@@ -200,6 +200,16 @@
             `;
         }
 
+        function whatsappBotBadge(user) {
+            const mode = user.whatsapp_bot_mode || 'none';
+            if (mode === 'shared') {
+                return `<span class="badge bg-info text-dark rounded-pill">Shared Admin Bot</span>`;
+            } else if (mode === 'own') {
+                return `<span class="badge bg-success rounded-pill">Separate Config</span>`;
+            }
+            return `<span class="badge bg-secondary rounded-pill">No Bot</span>`;
+        }
+
         function renderRows(items, meta) {
             if (!Array.isArray(items) || items.length === 0) {
                 tableBody.innerHTML = `
@@ -230,15 +240,16 @@
                                 </a>
                             </td>
                             <td class="text-center d-none d-md-table-cell">${statusButton(user)}</td>
+                            <td class="text-center d-none d-md-table-cell">${whatsappBotBadge(user)}</td>
                             <td class="text-nowrap d-none d-md-table-cell">${formatDate(user.created_at)}</td>
                             <td class="text-center pe-4 d-none d-md-table-cell">
                                 <div class="users-action-group">
-                                    <a
+                                    <!-- <a
                                         href="#"
                                         class="btn btn-dark-blue btn-sm rounded-pill px-3 permissions-trigger-btn user-permissions-btn"
                                         data-user-id="${user.id}"
                                         data-user-name="${escapeHtml(user.name || "Staff")}"
-                                    >Permissions</a>
+                                    >Permissions</a> -->
                                     <a href="/users/${user.id}/edit" class="btn crm-action-btn btn-sm users-icon-btn" title="Edit"><i class="bi bi-pencil"></i></a>
                                     <a href="/users/${user.id}" class="btn crm-action-btn btn-sm users-icon-btn" title="View"><i class="bi bi-eye"></i></a>
                                     <button type="button" class="btn crm-action-btn btn-sm text-danger user-delete-btn users-icon-btn" title="Delete" data-user-id="${user.id}"><i class="bi bi-trash"></i></button>
@@ -266,18 +277,22 @@
                                             <div class="expand-label"><i class="fa-solid fa-calendar-days"></i> Created At :</div>
                                             <div class="expand-value">${formatDate(user.created_at)}</div>
                                         </div>
-                                        <div class="col-12 d-flex justify-content-between align-items-center">
+                                        <div class="col-12 d-flex justify-content-between align-items-center mb-2">
                                             <div class="expand-label"><i class="fa-solid fa-circle-info"></i> Status :</div>
                                             <div class="expand-value">${statusButton(user)}</div>
-                                        </div>                                        
+                                        </div> 
                                         <div class="col-12 d-flex justify-content-between align-items-center">
+                                            <div class="expand-label"><i class="fa-brands fa-whatsapp"></i> WhatsApp Bot :</div>
+                                            <div class="expand-value">${whatsappBotBadge(user)}</div>
+                                        </div>                                        
+                                        <!-- <div class="col-12 d-flex justify-content-between align-items-center">
                                             <div class="expand-label"><i class="fa-solid fa-lock"></i> Permissions :</div>
                                             <div class="expand-value">
                                                 <a href="#" class="btn btn-dark-blue btn-sm rounded-pill px-3 user-permissions-btn" data-user-id="${user.id}" data-user-name="${escapeHtml(user.name || "Staff")}">
                                                     <i class="bi bi-shield-lock me-1"></i> Permissions
                                                 </a>
                                             </div>
-                                        </div>
+                                        </div> -->
                                         <div class="col-12 d-flex justify-content-between align-items-center pt-3 mt-3 border-top">
                                             <div class="expand-label"><i class="fa-solid fa-gear"></i> Actions :</div>
                                             <div class="expand-actions">

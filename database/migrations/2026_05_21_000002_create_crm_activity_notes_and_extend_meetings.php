@@ -8,19 +8,21 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('crm_activity_notes', function (Blueprint $table) {
-            $table->id();
-            $table->string('noteable_type');
-            $table->unsignedBigInteger('noteable_id');
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->text('note');
-            $table->string('note_type')->default('general');
-            $table->boolean('is_private')->default(false);
-            $table->timestamps();
-            $table->softDeletes();
+        if (!Schema::hasTable('crm_activity_notes')) {
+Schema::create('crm_activity_notes', function (Blueprint $table) {
+                $table->id();
+                $table->string('noteable_type');
+                $table->unsignedBigInteger('noteable_id');
+                $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+                $table->text('note');
+                $table->string('note_type')->default('general');
+                $table->boolean('is_private')->default(false);
+                $table->timestamps();
+                $table->softDeletes();
 
-            $table->index(['noteable_type', 'noteable_id', 'created_at']);
-        });
+                $table->index(['noteable_type', 'noteable_id', 'created_at']);
+            });
+        }
 
         Schema::table('follow_ups', function (Blueprint $table) {
             if (!Schema::hasColumn('follow_ups', 'related_type')) {

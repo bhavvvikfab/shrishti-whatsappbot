@@ -8,26 +8,30 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('lead_tags', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('color')->default('#3B82F6');
-            $table->text('description')->nullable();
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
-            $table->softDeletes();
-        });
+        if (!Schema::hasTable('lead_tags')) {
+Schema::create('lead_tags', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->string('color')->default('#3B82F6');
+                $table->text('description')->nullable();
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
+                $table->softDeletes();
+            });
+        }
 
-        Schema::create('lead_tag_pivot', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('lead_id')->constrained()->onDelete('cascade');
-            $table->foreignId('lead_tag_id')->constrained('lead_tags')->onDelete('cascade');
-            $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
-            $table->timestamps();
+        if (!Schema::hasTable('lead_tag_pivot')) {
+Schema::create('lead_tag_pivot', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('lead_id')->constrained()->onDelete('cascade');
+                $table->foreignId('lead_tag_id')->constrained('lead_tags')->onDelete('cascade');
+                $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
+                $table->timestamps();
 
-            $table->unique(['lead_id', 'lead_tag_id']);
-            $table->index('lead_tag_id');
-        });
+                $table->unique(['lead_id', 'lead_tag_id']);
+                $table->index('lead_tag_id');
+            });
+        }
     }
 
     public function down(): void

@@ -11,19 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('leads', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('email')->nullable();
-            $table->string('phone')->nullable();
-            $table->string('source')->nullable();
-            $table->enum('status', ['open', 'in_progress', 'won', 'lost'])->default('open');
-            $table->string('destination')->nullable();
-            $table->date('travel_start_date')->nullable();
-            $table->integer('travelers')->nullable();
-            $table->text('notes')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('leads')) {
+Schema::create('leads', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->string('email')->nullable();
+                $table->string('phone')->nullable();
+                $table->string('source')->nullable();
+                $table->enum('status', ['open', 'in_progress', 'won', 'lost'])->default('open');
+                $table->string('destination')->nullable();
+                $table->date('travel_start_date')->nullable();
+                $table->integer('travelers')->nullable();
+                $table->text('notes')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

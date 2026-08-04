@@ -168,7 +168,7 @@
                 };
                 $canViewCustomers = (bool) $authUser;
                 $whatsappModuleEnabled = \App\Models\Setting::isEnabled('whatsapp_module_enabled', true);
-                $canViewWhatsapp = $whatsappModuleEnabled && (bool) $authUser?->hasMatrixPermission('view_whatsapp');
+                $canViewWhatsapp = $whatsappModuleEnabled && (bool) $authUser?->canUseWhatsappInbox();
             @endphp
             <!-- Sidebar -->
             <aside class="crm-sidebar shadow-sm" id="sidenav-main" style="min-width: 260px">
@@ -199,16 +199,6 @@
                         </a>
                     </li>
 
-                    <!-- Manage Staff -->
-                    @if(auth()->user()?->isAdmin())
-                        <li class="nav-item mt-2">
-                            <a class="nav-link ccc ddd @if(request()->routeIs('users.*')) active @endif"
-                                href="{{ route('users.index') }}">
-                                <i class="fa fa-users me-2 text-info"></i>
-                                <span>Manage Staff</span>
-                            </a>
-                        </li>
-                    @endif
 
                     @if (auth()->user()?->hasMatrixPermission('view_customers'))
                         <!-- Manage Customers -->
@@ -237,6 +227,17 @@
                     HIDDEN MODULES END --}}
 
                     @if ($canViewWhatsapp)
+                        <!-- Manage Staff -->
+                        @if(auth()->user()?->isAdmin())
+                            <li class="nav-item mt-2">
+                                <a class="nav-link ccc ddd @if(request()->routeIs('users.*')) active @endif"
+                                    href="{{ route('users.index') }}">
+                                    <i class="fa fa-users me-2 text-info"></i>
+                                    <span>Manage Staff</span>
+                                </a>
+                            </li>
+                        @endif
+
                         <li class="nav-item mt-2">
                             <a class="nav-link ccc ddd @if(request()->routeIs('whatsapp.inbox') || request()->routeIs('whatsapp.conversation')) active @endif"
                                 href="{{ route('whatsapp.inbox') }}">

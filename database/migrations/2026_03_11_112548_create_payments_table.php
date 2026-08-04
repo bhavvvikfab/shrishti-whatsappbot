@@ -11,18 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('payments', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('invoice_id');
-            $table->string('transaction_id')->nullable();
-            $table->decimal('amount', 12, 2)->default(0);
-            $table->string('payment_method')->nullable();
-            $table->date('payment_date')->nullable();
-            $table->text('notes')->nullable();
-            $table->timestamps();
+        if (!Schema::hasTable('payments')) {
+Schema::create('payments', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('invoice_id');
+                $table->string('transaction_id')->nullable();
+                $table->decimal('amount', 12, 2)->default(0);
+                $table->string('payment_method')->nullable();
+                $table->date('payment_date')->nullable();
+                $table->text('notes')->nullable();
+                $table->timestamps();
 
-            $table->index('invoice_id');
-        });
+                $table->index('invoice_id');
+            });
+        }
     }
 
     /**

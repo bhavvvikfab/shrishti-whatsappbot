@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('push_subscriptions', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('user_id');
-            $table->text('endpoint');
-            $table->string('p256dh')->nullable();
-            $table->string('auth')->nullable();
-            $table->timestamps();
+        if (!Schema::hasTable('push_subscriptions')) {
+Schema::create('push_subscriptions', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('user_id');
+                $table->text('endpoint');
+                $table->string('p256dh')->nullable();
+                $table->string('auth')->nullable();
+                $table->timestamps();
 
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-        });
+                $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            });
+        }
     }
 
     /**

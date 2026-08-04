@@ -11,18 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('itinerary_items', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('itinerary_day_id');
-            $table->string('item_type')->nullable();
-            $table->string('time')->nullable();
-            $table->string('title');
-            $table->text('description')->nullable();
-            $table->unsignedBigInteger('supplier_id')->nullable();
-            $table->timestamps();
+        if (!Schema::hasTable('itinerary_items')) {
+Schema::create('itinerary_items', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('itinerary_day_id');
+                $table->string('item_type')->nullable();
+                $table->string('time')->nullable();
+                $table->string('title');
+                $table->text('description')->nullable();
+                $table->unsignedBigInteger('supplier_id')->nullable();
+                $table->timestamps();
 
-            $table->index(['itinerary_day_id', 'supplier_id']);
-        });
+                $table->index(['itinerary_day_id', 'supplier_id']);
+            });
+        }
     }
 
     /**

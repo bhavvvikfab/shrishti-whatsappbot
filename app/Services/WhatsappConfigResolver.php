@@ -77,6 +77,10 @@ class WhatsappConfigResolver
 
     public function resolveMode(User $user): string
     {
+        if ($user->isAdmin()) {
+            return self::MODE_OWN;
+        }
+
         if ($this->ownConfigForUser($user)) {
             return self::MODE_OWN;
         }
@@ -90,14 +94,6 @@ class WhatsappConfigResolver
 
     public function canAccessWhatsapp(User $user): bool
     {
-        if ($user->isAdmin()) {
-            return $this->forUser($user) !== null;
-        }
-
-        if (! $user->hasMatrixPermission('view_whatsapp')) {
-            return false;
-        }
-
         return $this->forUser($user) !== null;
     }
 

@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('custom_field_values', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('custom_field_id')->constrained()->onDelete('cascade');
-            $table->morphs('model'); // model_id and model_type
-            $table->text('value')->nullable();
-            $table->timestamps();
+        if (!Schema::hasTable('custom_field_values')) {
+Schema::create('custom_field_values', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('custom_field_id')->constrained()->onDelete('cascade');
+                $table->morphs('model'); // model_id and model_type
+                $table->text('value')->nullable();
+                $table->timestamps();
             
-            $table->index(['model_id', 'model_type']);
-        });
+                $table->index(['model_id', 'model_type']);
+            });
+        }
     }
 
     /**

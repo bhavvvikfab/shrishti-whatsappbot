@@ -477,7 +477,7 @@ class DashboardController extends Controller
             $canDeals = $user?->hasMatrixPermission('view_deals') ?? false;
             $canBookings = $user?->hasMatrixPermission('view_bookings') ?? false;
             $canWhatsappConversations = \App\Models\Setting::isEnabled('whatsapp_module_enabled', true)
-                && ($user?->hasMatrixPermission('view_whatsapp') ?? false);
+                && ($user?->canUseWhatsappInbox() ?? false);
 
             $customersQuery = $canCustomers
                 ? $this->scopeOwnedRecords(Customer::query())

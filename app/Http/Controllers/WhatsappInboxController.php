@@ -15,6 +15,7 @@ use App\Models\WhatsappMessage;
 use App\Models\WhatsappMessageTemplate;
 use App\Models\WhatsappConfig;
 use App\Services\WhatsappConfigResolver;
+use App\Services\WhatsAppInboxService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -49,7 +50,7 @@ class WhatsappInboxController extends Controller
         $activeConfig = $this->activeWhatsappConfig();
         $needsSetup = $user
             && ! $user->isAdmin()
-            && $user->hasMatrixPermission('view_whatsapp')
+            && $user->canUseWhatsappInbox()
             && $activeConfig === null;
 
         if ($needsSetup) {
