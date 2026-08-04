@@ -16,18 +16,19 @@ class AdminUserSeeder extends Seeder
     {
         // Create an admin user
         $user = User::updateOrCreate(
-            ['email' => 'admin@admin.com'],
+            ['email' => 'admin@gmail.com'],
             [
-                'name' => 'Super Admin',
+                'name' => 'Admin',
                 'password' => Hash::make('12345678'),
                 'email_verified_at' => now(),
+                'is_active' => 1,
             ]
         );
 
         // Assign super-admin or admin role using Spatie Permission
-        $role = Role::where('name', 'super-admin')->first();
+        $role = Role::where('name', 'admin')->first();
         if (!$role) {
-            $role = Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+            $role = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         }
         
         $user->assignRole($role);
