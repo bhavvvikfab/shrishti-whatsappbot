@@ -21,9 +21,11 @@
 .wa-main { flex: 1; display: flex; align-items: center; justify-content: center; background: var(--crm-bg-page); }
 .wa-empty { text-align: center; color: #9ca3af; }
 .wa-empty i { font-size: 64px; color: #d1d5db; }
-.wa-status-tabs { display: flex; gap: 4px; padding: 8px 16px; border-bottom: 1px solid var(--crm-border); }
-.wa-status-tab { padding: 4px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid var(--crm-border); background: var(--crm-bg-card); color: var(--crm-text-muted); }
+.wa-status-tabs { display: flex; gap: 4px; padding: 8px 16px; border-bottom: 1px solid var(--crm-border); overflow-x: auto; scrollbar-width: none; }
+.wa-status-tab { padding: 4px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid var(--crm-border); background: var(--crm-bg-card); color: var(--crm-text-muted); flex-shrink: 0; white-space: nowrap; }
 .wa-status-tab.active { background: #25d366; color: #fff; border-color: #25d366; }
+
+.wa-status-tabs::-webkit-scrollbar { display: none; }
 .wa-conv-tag {
     display: inline-block;
     font-size: 10px;
