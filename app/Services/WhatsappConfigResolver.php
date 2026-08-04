@@ -94,6 +94,10 @@ class WhatsappConfigResolver
 
     public function canAccessWhatsapp(User $user): bool
     {
+        if ($user->isAdmin()) {
+            return true;
+        }
+
         return $this->forUser($user) !== null;
     }
 
