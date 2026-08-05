@@ -8,7 +8,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Lakyashvi WA">
+    <meta name="apple-mobile-web-app-title" content="Shrishti Trip">
 
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -1042,7 +1042,7 @@
                 const link = notification?.link || inboxUrl;
                 const text = String(notification?.notification_text || 'New WhatsApp message');
                 const isWhatsApp = /whatsapp/i.test(text);
-                const title = isWhatsApp ? 'Lakyashvi WhatsApp' : 'New Notification';
+                const title = isWhatsApp ? 'Shrishti Trip WhatsApp' : 'New Notification';
                 const body = text.replace(/^New WhatsApp message from\s+/i, '').slice(0, 140);
 
                 const toast = document.createElement('div');
@@ -1109,7 +1109,7 @@
 
                 const text = String(notification?.notification_text || 'New WhatsApp message');
                 const isWhatsApp = /whatsapp/i.test(text);
-                const title = isWhatsApp ? 'Lakyashvi WhatsApp' : 'New Notification';
+                const title = isWhatsApp ? 'Shrishti Trip WhatsApp' : 'New Notification';
                 const body = text.replace(/^New WhatsApp message from\s+/i, '').slice(0, 140);
 
                 // In-app toast only useful while the tab is visible.
@@ -1268,7 +1268,7 @@
                     ensureBrowserNotificationPermission().then(function (permission) {
                         if (permission === 'granted') {
                             showOsNotification(
-                                'Lakyashvi WhatsApp',
+                                'Shrishti Trip WhatsApp',
                                 'Desktop notifications are enabled. You will get alerts when the tab is minimized.',
                                 inboxUrl,
                                 'crm-notif-test'

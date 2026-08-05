@@ -50,10 +50,11 @@ return [
         'ai_auto_reply' => env('WHATSAPP_AI_AUTO_REPLY', true),
         // Wait this many minutes after inbound before AI runs, unless an agent sends from CRM first.
         'ai_reply_delay_minutes' => max(1, (int) env('WHATSAPP_AI_REPLY_DELAY_MINUTES', 5)),
+        'ai_business_name' => env('WHATSAPP_AI_BUSINESS_NAME', 'Shrishti Trip'),
         // Used by WhatsApp Auto AI replies (OpenAIService). Override in .env if needed.
         'ai_company_profile' => env(
             'WHATSAPP_AI_COMPANY_PROFILE',
-            'Fablead Developers Technolab is an IT and software company. We build CRM systems, custom web and mobile applications, business automation, API integrations, cloud solutions, and provide technical support and consulting.'
+            'Shrishti Trip is a tour and travel company. We help customers plan domestic and international trips, tour packages, hotel stays, transport, itineraries, group tours, family holidays, and custom travel plans.'
         ),
     ],
 

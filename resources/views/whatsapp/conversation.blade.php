@@ -1623,8 +1623,8 @@ var REACT_MESSAGE_URL = '{{ route('whatsapp.conversation.react', ['conversation'
 var SHOP_LOCATION = {
     latitude: 21.207227,
     longitude: 72.78275598,
-    name: 'Lakyashvi Fashion',
-    address: 'shop no 2, Palanpur Jakatnaka Rd, near dipika marble, opp. sarojini naydu vegetable market, Surat, 395009'
+    name: @json(\App\Models\Setting::getValue('company_name', 'Shrishti Trip')),
+    address: @json(\App\Models\Setting::getValue('company_address', 'Shrishti Trip — tour and travel enquiries'))
 };
 var ASSIGN_URL = '{{ route('whatsapp.conversation.assign', $conversation) }}';
 var STATUS_URL = '{{ route('whatsapp.conversation.status', $conversation) }}';
@@ -4353,14 +4353,14 @@ function pollChatMessages() {
                     if (msg.direction === 'incoming' && document.hidden) {
                         if (typeof window.crmShowOsNotification === 'function') {
                             window.crmShowOsNotification(
-                                'Lakyashvi WhatsApp',
+                                'Shrishti Trip WhatsApp',
                                 String(msg.message || 'New message').slice(0, 120),
                                 window.location.href,
                                 'wa-msg-' + msg.id
                             );
                         } else if ('Notification' in window && Notification.permission === 'granted') {
                             try {
-                                const n = new Notification('Lakyashvi WhatsApp', {
+                                const n = new Notification('Shrishti Trip WhatsApp', {
                                     body: String(msg.message || 'New message').slice(0, 120),
                                     tag: 'wa-msg-' + msg.id,
                                     renotify: true,

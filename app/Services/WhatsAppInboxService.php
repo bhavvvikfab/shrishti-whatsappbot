@@ -1440,8 +1440,8 @@ class WhatsAppInboxService
     }
 
     /**
-     * Send the fixed Lakyashvi Fashion welcome once on first contact,
-     * independently of the global Auto AI switch.
+     * Send a configured welcome automation rule on first contact only.
+     * No hardcoded default message — use WhatsApp Automation welcome rules if needed.
      */
     private function sendFirstContactWelcome(WhatsappConversation $conversation): void
     {
@@ -1455,27 +1455,15 @@ class WhatsAppInboxService
             ->byPriority()
             ->first();
 
-        if ($welcomeRule) {
-            $this->executeAutomationRule($welcomeRule, $conversation);
-            $welcomeRule->incrementExecution();
-        } else {
-            $this->sendTextMessage($conversation, $this->defaultWelcomeMessage());
+        if (! $welcomeRule) {
+            return;
         }
+
+        $this->executeAutomationRule($welcomeRule, $conversation);
+        $welcomeRule->incrementExecution();
 
         $meta['welcome_sent_at'] = now()->toIso8601String();
         $conversation->update(['metadata' => $meta]);
-    }
-
-    private function defaultWelcomeMessage(): string
-    {
-        return "Welcome🙏🙏🙏 to\n*Lakyashvi Fashion*\n\n"
-            . "Payment mode: payment online hai, shipping charges extra\n"
-            . "Not 🚫 COD available\n"
-            . "Order reply time: 11:00am to 9:00 pm\n\n"
-            . "Abhi follow karo aur dekho naya stock: Lakyashvi Fashion\n"
-            . "Link: https://www.instagram.com/lakyashvifashion?igsh=MWN3d3kwdWJzanZpMQ==\n\n"
-            . "Store location: shop no2 vrundavan society opp Sarojini naydu sabji market l.p savani road palanpur jakatnaka Surat 395009\n"
-            . "Mo: 9904772071";
     }
 
     /**
@@ -1887,14 +1875,14 @@ class WhatsAppInboxService
                 'conversation_history' => $conversationHistory,
                 'lead_info'            => $leadInfo,
                 'business_name'        => Setting::getValue('company_name')
-                    ?: config('services.whatsapp.ai_business_name', 'Lakyashvi Fashion'),
+                    ?: config('services.whatsapp.ai_business_name', 'Shrishti Trip'),
                 'products'             => [
-                    'Ladies wear',
-                    'Mens wear',
-                    'Kurtis & ethnic wear',
-                    'Dresses & western wear',
-                    'Tops, shirts & jeans',
-                    'Seasonal collections',
+                    'Domestic tour packages',
+                    'International holidays',
+                    'Family and group tours',
+                    'Hotel and transport bookings',
+                    'Custom itineraries',
+                    'Weekend getaways',
                 ],
             ]);
 

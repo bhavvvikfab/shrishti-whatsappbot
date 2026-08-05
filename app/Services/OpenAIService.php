@@ -108,7 +108,7 @@ class OpenAIService
         $prompt .= "- confidence: number (0-1)\n";
         $prompt .= "- reason: string\n";
         $prompt .= "- suggested_action: string\n";
-        $prompt .= "\nQualify based on fashion/clothing interest (ladies or mens wear, product interest, size/budget intent, order readiness).";
+        $prompt .= "\nQualify based on tour and travel interest (destinations, dates, travelers, budget, package type, booking readiness).";
 
         try {
             $response = Http::timeout(30)
@@ -116,7 +116,7 @@ class OpenAIService
                 ->post("{$this->baseUrl}/chat/completions", [
                     'model' => config('services.openai.model', 'gpt-3.5-turbo'),
                     'messages' => [
-                        ['role' => 'system', 'content' => 'You are a fashion retail lead qualification assistant for a clothing store. Always respond with valid JSON.'],
+                        ['role' => 'system', 'content' => 'You are a tour and travel lead qualification assistant for Shrishti Trip. Always respond with valid JSON.'],
                         ['role' => 'user', 'content' => $prompt],
                     ],
                     'max_tokens' => 300,
@@ -171,7 +171,7 @@ class OpenAIService
                 ->post("{$this->baseUrl}/chat/completions", [
                     'model' => config('services.openai.model', 'gpt-3.5-turbo'),
                     'messages' => [
-                        ['role' => 'system', 'content' => 'You are a helpful fashion retail sales assistant for a clothing store. Focus on ladies wear, mens wear, outfits, sizes, colours, styles, availability, and orders. Keep responses concise, warm, and professional.'],
+                        ['role' => 'system', 'content' => 'You are a helpful tour and travel sales assistant for Shrishti Trip. Focus on destinations, travel dates, number of travelers, budget, packages, hotels, transport, and bookings. Keep responses concise, warm, and professional.'],
                         ['role' => 'user', 'content' => $prompt],
                     ],
                     'max_tokens' => 150,
@@ -231,22 +231,22 @@ class OpenAIService
     {
         $businessName = $context['business_name']
             ?? config('services.whatsapp.ai_business_name')
-            ?? config('app.name', 'Lakyashvi Fashion');
+            ?? config('app.name', 'Shrishti Trip');
         $companyProfile = (string) config(
             'services.whatsapp.ai_company_profile',
-            'We are a fashion clothing store selling ladies and mens wear, ethnic and western outfits, and seasonal collections.'
+            'Shrishti Trip is a tour and travel company offering domestic and international tour packages, custom itineraries, hotel bookings, and transport arrangements.'
         );
 
-        $prompt = "You are a real human sales assistant replying on WhatsApp for {$businessName}, not a bot. ";
+        $prompt = "You are a real human travel consultant replying on WhatsApp for {$businessName}, not a bot. ";
         $prompt .= "{$companyProfile} ";
-        $prompt .= "Help customers with fashion and clothing questions: ladies wear, mens wear, kurtis, dresses, tops, shirts, jeans, ethnic wear, western wear, sizes, colours, fabric, styling tips, new arrivals, offers, stock availability, and how to place an order. ";
-        $prompt .= "Do not talk about IT, software, CRM, travel, or unrelated services. Stay focused on fashion apparel. ";
-        $prompt .= "Write natural conversational Hinglish in Roman script, mixing simple Hindi and English like a friendly Indian shop salesperson. Never use Hindi/Devanagari script. ";
+        $prompt .= "Help customers with tour and travel questions: destinations, travel dates, number of travelers, budget, tour packages, hotels, flights, transport, visa guidance (general only), itinerary planning, group tours, family holidays, and how to book. ";
+        $prompt .= "Do not talk about fashion, clothing, IT, software, CRM, or unrelated retail products. Stay focused on tours and travel only. ";
+        $prompt .= "Write natural conversational Hinglish in Roman script, mixing simple Hindi and English like a friendly Indian travel agent. Never use Hindi/Devanagari script. ";
         $prompt .= "Match the customer's tone and language. If they write only English, use easy English with a light Hinglish touch; if they use Hinglish, reply naturally in Hinglish. ";
         $prompt .= "Keep replies short, usually 1 to 3 sentences, and vary the wording so replies do not feel copied or robotic. Avoid long menus, formal marketing language, and unnecessary bullet lists. Use at most one suitable emoji occasionally, not in every reply. ";
-        $prompt .= "Ask only one useful follow-up question at a time when needed, such as category, size, colour, occasion, or budget. ";
+        $prompt .= "Ask only one useful follow-up question at a time when needed, such as destination, travel month, number of people, or budget range. ";
         $prompt .= "Do not repeatedly say 'our team will contact you' or repeat the business name. ";
-        $prompt .= "Do not invent exact prices, discounts, or stock counts. If unsure, naturally say 'main check karke batata/batati hoon' without claiming it is confirmed. ";
+        $prompt .= "Do not invent exact package prices, seat availability, or confirmed bookings. If unsure, naturally say 'main check karke batata/batati hoon' without claiming it is confirmed. ";
         $prompt .= "Never ask for passwords, OTPs, or payment card details over chat.";
 
         if (!empty($context['lead_info']['name'])) {
@@ -258,7 +258,7 @@ class OpenAIService
         }
 
         if (!empty($context['products'])) {
-            $prompt .= " Popular categories or products: " . implode(', ', $context['products']) . ".";
+            $prompt .= " Popular offerings: " . implode(', ', $context['products']) . ".";
         }
 
         return $prompt;
