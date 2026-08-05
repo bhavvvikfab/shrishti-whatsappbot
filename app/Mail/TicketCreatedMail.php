@@ -2,7 +2,7 @@
 
 namespace App\Mail;
 
-use App\Models\Setting;
+use App\Support\CompanyProfile;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;

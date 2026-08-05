@@ -62,7 +62,7 @@ return [
         // Used by WhatsApp Auto AI replies (OpenAIService). Override in .env if needed.
         'ai_company_profile' => env(
             'WHATSAPP_AI_COMPANY_PROFILE',
-            'Shrishti Trip is a tour and travel company. We help customers plan domestic and international trips, tour packages, hotel stays, transport, itineraries, group tours, family holidays, and custom travel plans.'
+            'Shrishti Trip is a tour and travel company (SAVE MONEY. SAFE JOURNEY.). We plan domestic and international trips, tour packages, hotels, transport, and custom itineraries. Office: JJ Camp-02, Shiv Mandir Bhai Veer Singh Marg, New Delhi-110001. Call +91 7042426335 (Mon–Sat 9 AM–7 PM IST), WhatsApp +91 8920909501, email info@shrishtitrip.com, website https://shrishtitrip.com.'
         ),
     ],
 

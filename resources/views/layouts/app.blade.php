@@ -13,7 +13,7 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ \App\Models\Setting::getValue('company_name', 'Fablead Developers Technolab') }}</title>
+    <title>{{ \App\Support\BusinessProfile::name() }}</title>
 
     <!-- Google Fonts (Outfit)     -->
     <link rel="icon" type="image/png"

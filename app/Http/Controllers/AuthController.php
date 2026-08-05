@@ -37,7 +37,7 @@ class AuthController extends Controller
     private function loginBranding(): array
     {
         return [
-            'companyName' => Setting::getValue('company_name') ?: 'Fablead Developers Technolab',
+            'companyName' => Setting::getValue('company_name') ?: config('shrishti_trip.name', 'Shrishti Trip'),
         ];
     }
 

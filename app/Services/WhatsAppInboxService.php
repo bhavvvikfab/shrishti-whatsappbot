@@ -13,6 +13,7 @@ use App\Models\WhatsappConfig;
 use App\Models\WhatsappConversation;
 use App\Models\WhatsappMessage;
 use App\Models\WhatsappMessageTemplate;
+use App\Support\BusinessProfile;
 use App\Services\OpenAIService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -1974,8 +1975,8 @@ class WhatsAppInboxService
             $aiReply = $this->openAIService->generateReply($text, [
                 'conversation_history' => $conversationHistory,
                 'lead_info'            => $leadInfo,
-                'business_name'        => Setting::getValue('company_name')
-                    ?: config('services.whatsapp.ai_business_name', 'Shrishti Trip'),
+                'business_name'        => BusinessProfile::name(),
+                'contact_info'         => BusinessProfile::aiContactBlock(),
                 'products'             => [
                     'Domestic tour packages',
                     'International holidays',

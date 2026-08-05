@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\BusinessProfile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -248,6 +249,11 @@ class OpenAIService
         $prompt .= "Do not repeatedly say 'our team will contact you' or repeat the business name. ";
         $prompt .= "Do not invent exact package prices, seat availability, or confirmed bookings. If unsure, naturally say 'main check karke batata/batati hoon' without claiming it is confirmed. ";
         $prompt .= "Never ask for passwords, OTPs, or payment card details over chat.";
+
+        $contactBlock = $context['contact_info'] ?? BusinessProfile::aiContactBlock();
+        if ($contactBlock !== '') {
+            $prompt .= " Official contact details you may share when asked: {$contactBlock}.";
+        }
 
         if (!empty($context['lead_info']['name'])) {
             $prompt .= " You are speaking with {$context['lead_info']['name']}.";

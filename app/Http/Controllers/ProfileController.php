@@ -225,7 +225,12 @@ class ProfileController extends Controller
             'city' => ['nullable', 'string', 'max:255'],
             'country' => ['nullable', 'string', 'max:255'],
             'company_name' => ['required', 'string', 'max:255'],
-            'company_address' => ['required', 'string', 'max:255'],
+            'company_address' => ['required', 'string', 'max:500'],
+            'company_phone' => ['nullable', 'string', 'max:30'],
+            'company_whatsapp' => ['nullable', 'string', 'max:30'],
+            'company_email' => ['nullable', 'email', 'max:255'],
+            'company_latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'company_longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'company_tax_id' => ['nullable', 'string', 'max:255'],
             'avatar' => ['nullable', 'file', $imageFileRule, 'max:2048'],
             'company_logo_path' => ['nullable', 'file', $imageFileRule, 'max:2048'],
@@ -246,7 +251,11 @@ class ProfileController extends Controller
             $data['avatar_path'] = $request->file('avatar')->store('avatars', 'public');
         }
 
-        $userData = collect($data)->except(['company_name', 'company_address', 'company_tax_id', 'avatar', 'company_logo_path'])->all();
+        $userData = collect($data)->except([
+            'company_name', 'company_address', 'company_phone', 'company_whatsapp',
+            'company_email', 'company_latitude', 'company_longitude', 'company_tax_id',
+            'avatar', 'company_logo_path',
+        ])->all();
         $user->update($userData);
 
         Setting::updateOrCreate(
@@ -256,6 +265,26 @@ class ProfileController extends Controller
         Setting::updateOrCreate(
             ['key' => 'company_address'],
             ['value' => $request->input('company_address'), 'group' => 'general', 'type' => 'string']
+        );
+        Setting::updateOrCreate(
+            ['key' => 'company_phone'],
+            ['value' => $request->input('company_phone', config('shrishti_trip.phone')), 'group' => 'general', 'type' => 'string']
+        );
+        Setting::updateOrCreate(
+            ['key' => 'company_whatsapp'],
+            ['value' => $request->input('company_whatsapp', config('shrishti_trip.whatsapp')), 'group' => 'general', 'type' => 'string']
+        );
+        Setting::updateOrCreate(
+            ['key' => 'company_email'],
+            ['value' => $request->input('company_email', config('shrishti_trip.email')), 'group' => 'general', 'type' => 'string']
+        );
+        Setting::updateOrCreate(
+            ['key' => 'company_latitude'],
+            ['value' => $request->input('company_latitude', config('shrishti_trip.latitude')), 'group' => 'general', 'type' => 'string']
+        );
+        Setting::updateOrCreate(
+            ['key' => 'company_longitude'],
+            ['value' => $request->input('company_longitude', config('shrishti_trip.longitude')), 'group' => 'general', 'type' => 'string']
         );
         Setting::updateOrCreate(
             ['key' => 'company_tax_id'],
@@ -281,6 +310,11 @@ class ProfileController extends Controller
         return Setting::query()->whereIn('key', [
             'company_name',
             'company_address',
+            'company_phone',
+            'company_whatsapp',
+            'company_email',
+            'company_latitude',
+            'company_longitude',
             'company_tax_id',
             'company_logo_path',
         ])->pluck('value', 'key');

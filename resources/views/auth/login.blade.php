@@ -27,7 +27,7 @@
 
                             <!-- Header -->
                             @php
-                                $companyName = $companyName ?? 'Fablead Developers Technolab';
+                                $companyName = $companyName ?? config('shrishti_trip.name', 'Shrishti Trip');
                                 $loginLogo = url(
                                     (env('PUBLIC_PATH') ? rtrim(env('PUBLIC_PATH'), '/') . '/' : '') .
                                         'images/logo1.png',

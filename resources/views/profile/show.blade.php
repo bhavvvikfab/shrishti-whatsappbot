@@ -116,13 +116,39 @@
                             <div class="row g-3">
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Company Name</label>
-                                    <input type="text" name="company_name" value="{{ old('company_name', $settings['company_name'] ?? '') }}" class="form-control @error('company_name') is-invalid @enderror">
+                                    <input type="text" name="company_name" value="{{ old('company_name', $settings['company_name'] ?? config('shrishti_trip.name')) }}" class="form-control @error('company_name') is-invalid @enderror">
                                     @error('company_name')<div class="profile-field-error">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Company Address</label>
-                                    <input type="text" name="company_address" value="{{ old('company_address', $settings['company_address'] ?? '') }}" class="form-control @error('company_address') is-invalid @enderror">
+                                    <label class="form-label fw-semibold">Office Address</label>
+                                    <input type="text" name="company_address" value="{{ old('company_address', $settings['company_address'] ?? config('shrishti_trip.office_address')) }}" class="form-control @error('company_address') is-invalid @enderror">
                                     @error('company_address')<div class="profile-field-error">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Call Us (Phone)</label>
+                                    <input type="text" name="company_phone" value="{{ old('company_phone', $settings['company_phone'] ?? config('shrishti_trip.phone')) }}" class="form-control @error('company_phone') is-invalid @enderror" placeholder="+91 7042426335">
+                                    @error('company_phone')<div class="profile-field-error">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">WhatsApp Number</label>
+                                    <input type="text" name="company_whatsapp" value="{{ old('company_whatsapp', $settings['company_whatsapp'] ?? config('shrishti_trip.whatsapp')) }}" class="form-control @error('company_whatsapp') is-invalid @enderror" placeholder="+91 8920909501">
+                                    @error('company_whatsapp')<div class="profile-field-error">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Business Email</label>
+                                    <input type="email" name="company_email" value="{{ old('company_email', $settings['company_email'] ?? config('shrishti_trip.email')) }}" class="form-control @error('company_email') is-invalid @enderror" placeholder="info@shrishtitrip.com">
+                                    @error('company_email')<div class="profile-field-error">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Office Latitude</label>
+                                    <input type="text" name="company_latitude" value="{{ old('company_latitude', $settings['company_latitude'] ?? config('shrishti_trip.latitude')) }}" class="form-control @error('company_latitude') is-invalid @enderror">
+                                    @error('company_latitude')<div class="profile-field-error">{{ $message }}</div>@enderror
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Office Longitude</label>
+                                    <input type="text" name="company_longitude" value="{{ old('company_longitude', $settings['company_longitude'] ?? config('shrishti_trip.longitude')) }}" class="form-control @error('company_longitude') is-invalid @enderror">
+                                    @error('company_longitude')<div class="profile-field-error">{{ $message }}</div>@enderror
+                                    <small class="text-muted">Used when staff send Office Location in WhatsApp chat.</small>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Company Tax No.</label>

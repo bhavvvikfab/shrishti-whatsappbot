@@ -1408,7 +1408,7 @@ body.wa-media-open .chatbot-card {
                     </li>
                     <li>
                         <button type="button" class="dropdown-item" onclick="sendShopLocation()">
-                            <i class="bi bi-shop me-2 text-success"></i>Shop Location
+                            <i class="bi bi-shop me-2 text-success"></i>Office Location
                         </button>
                     </li>
                     <li>
@@ -1620,12 +1620,7 @@ var SEND_LOCATION_URL = '{{ route('whatsapp.conversation.send_location', $conver
 var MESSAGES_URL = '{{ route('whatsapp.conversation.messages', $conversation) }}';
 var DELETE_MESSAGE_URL = '{{ route('whatsapp.conversation.delete_message', ['conversation' => $conversation, 'message' => '__MSG__']) }}';
 var REACT_MESSAGE_URL = '{{ route('whatsapp.conversation.react', ['conversation' => $conversation, 'message' => '__MSG__']) }}';
-var SHOP_LOCATION = {
-    latitude: 21.207227,
-    longitude: 72.78275598,
-    name: @json(\App\Models\Setting::getValue('company_name', 'Shrishti Trip')),
-    address: @json(\App\Models\Setting::getValue('company_address', 'Shrishti Trip — tour and travel enquiries'))
-};
+var SHOP_LOCATION = @json(\App\Support\BusinessProfile::officeLocation());
 var ASSIGN_URL = '{{ route('whatsapp.conversation.assign', $conversation) }}';
 var STATUS_URL = '{{ route('whatsapp.conversation.status', $conversation) }}';
 var TAG_URL = '{{ route('whatsapp.conversation.tag', $conversation) }}';
