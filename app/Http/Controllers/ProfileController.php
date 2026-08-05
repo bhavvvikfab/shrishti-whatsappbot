@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Setting;
+use App\Support\BusinessProfile;
 use App\Services\GoogleCalendarService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -307,7 +308,7 @@ class ProfileController extends Controller
 
     private function profileSettings()
     {
-        return Setting::query()->whereIn('key', [
+        $fromDb = Setting::query()->whereIn('key', [
             'company_name',
             'company_address',
             'company_phone',
@@ -318,5 +319,15 @@ class ProfileController extends Controller
             'company_tax_id',
             'company_logo_path',
         ])->pluck('value', 'key');
+
+        return array_merge($fromDb->all(), [
+            'company_name' => BusinessProfile::name(),
+            'company_address' => BusinessProfile::addressLine(),
+            'company_phone' => BusinessProfile::phone(),
+            'company_whatsapp' => BusinessProfile::whatsapp(),
+            'company_email' => BusinessProfile::email(),
+            'company_latitude' => (string) BusinessProfile::latitude(),
+            'company_longitude' => (string) BusinessProfile::longitude(),
+        ]);
     }
 }
