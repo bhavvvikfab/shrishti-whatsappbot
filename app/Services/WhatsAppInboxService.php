@@ -339,11 +339,13 @@ class WhatsAppInboxService
         }
 
         // Run automation after HTTP 200 is sent to Meta
-        dispatch(function () use ($conversation, $message, $messageText) {
+        $inboxService = $this;
+        dispatch(function () use ($inboxService, $conversation, $message, $messageText) {
             $conv = $conversation->fresh();
             $msg = $message->fresh();
             if ($conv && $msg) {
-                $this->triggerAutomation($conv, $msg, $messageText);
+                $inboxService->ensureConfigForConversation($conv);
+                $inboxService->triggerAutomation($conv, $msg, $messageText);
             }
         })->afterResponse();
 
@@ -1383,13 +1385,32 @@ class WhatsAppInboxService
         }
     }
 
+    public function ensureConfigForConversation(WhatsappConversation $conversation): void
+    {
+        if (filled($conversation->whatsapp_phone_id)) {
+            $config = WhatsappConfig::byPhoneNumberId($conversation->whatsapp_phone_id);
+            if ($config) {
+                $this->useConfig($config);
+
+                return;
+            }
+        }
+
+        if ($this->config() === null) {
+            $fallback = WhatsappConfig::adminConfig();
+            if ($fallback) {
+                $this->useConfig($fallback);
+            }
+        }
+    }
+
     /**
      * Trigger automation rules for incoming messages.
      *
      * The first-contact welcome is always allowed. The global Auto AI switch
      * controls every subsequent keyword, FAQ, and generated AI reply.
      */
-    private function triggerAutomation(WhatsappConversation $conversation, WhatsappMessage $message, string $text): void
+    public function triggerAutomation(WhatsappConversation $conversation, WhatsappMessage $message, string $text): void
     {
         $incomingCount = WhatsappMessage::where('conversation_id', $conversation->id)
             ->where('direction', 'incoming')
@@ -1415,9 +1436,10 @@ class WhatsAppInboxService
 
         foreach ($keywordRules as $rule) {
             if ($rule->matchesKeyword($text)) {
-                $this->executeAutomationRule($rule, $conversation);
                 $rule->incrementExecution();
-                return;
+                if ($this->executeAutomationRule($rule, $conversation)) {
+                    return;
+                }
             }
         }
 
@@ -1429,9 +1451,10 @@ class WhatsAppInboxService
 
         foreach ($faqRules as $rule) {
             if ($rule->matchesKeyword($text)) {
-                $this->executeAutomationRule($rule, $conversation);
                 $rule->incrementExecution();
-                return;
+                if ($this->executeAutomationRule($rule, $conversation)) {
+                    return;
+                }
             }
         }
 
@@ -1738,11 +1761,8 @@ class WhatsAppInboxService
     {
         $conversation = WhatsappConversation::find($conversationId);
 
-        if ($conversation && filled($conversation->whatsapp_phone_id)) {
-            $config = WhatsappConfig::byPhoneNumberId($conversation->whatsapp_phone_id);
-            if ($config) {
-                $this->useConfig($config);
-            }
+        if ($conversation) {
+            $this->ensureConfigForConversation($conversation);
         }
 
         if (! $this->isAiAutoReplyEnabled()) {
@@ -1756,6 +1776,24 @@ class WhatsAppInboxService
         $incoming = WhatsappMessage::find($incomingMessageId);
         if (! $conversation || ! $incoming || (int) $incoming->conversation_id !== $conversationId) {
             return;
+        }
+
+        $meta = $conversation->metadata ?? [];
+        $deferredId = (int) ($meta['defer_ai_for_message_id'] ?? 0);
+        if ($deferredId > 0 && $deferredId !== $incomingMessageId) {
+            $latestIncoming = WhatsappMessage::find($deferredId);
+            if ($latestIncoming && (int) $latestIncoming->conversation_id === $conversationId) {
+                $incoming = $latestIncoming;
+                $incomingMessageId = $deferredId;
+            } elseif ($deferredId !== $incomingMessageId) {
+                Log::info('WhatsApp deferred AI skipped: newer message deferred', [
+                    'conversation_id' => $conversationId,
+                    'job_message_id' => $incomingMessageId,
+                    'deferred_message_id' => $deferredId,
+                ]);
+
+                return;
+            }
         }
 
         if (! $conversation->aiReplyEnabled()) {
@@ -1773,6 +1811,10 @@ class WhatsAppInboxService
             ->where('direction', 'outgoing')
             ->where('id', '>', $incomingMessageId)
             ->whereNotNull('metadata->sent_by')
+            ->where(function ($query) {
+                $query->whereNull('metadata->ai_generated')
+                    ->orWhere('metadata->ai_generated', false);
+            })
             ->exists();
 
         if ($humanReplied) {
@@ -1781,7 +1823,7 @@ class WhatsAppInboxService
             return;
         }
 
-        $this->sendAIReply($conversation, $incoming, $incoming->message);
+        $this->sendAIReply($conversation, $incoming, (string) $incoming->message);
         $this->clearPendingAiDeferral($conversation->fresh() ?? $conversation);
     }
 
@@ -1797,22 +1839,31 @@ class WhatsAppInboxService
             return;
         }
 
-        $minutes = (int) config('services.whatsapp.ai_reply_delay_minutes', 5);
-        if ($minutes < 1) {
-            $minutes = 1;
+        $delaySeconds = max(15, (int) config('services.whatsapp.ai_reply_delay_seconds', 60));
+        $minutes = (int) config('services.whatsapp.ai_reply_delay_minutes', 1);
+        if ($minutes > 0) {
+            $delaySeconds = max($delaySeconds, $minutes * 60);
         }
 
         $meta = array_merge($conversation->metadata ?? [], [
             'defer_ai_for_message_id' => $incomingMessage->id,
-            'defer_ai_until' => now()->addMinutes($minutes)->toIso8601String(),
+            'defer_ai_until' => now()->addSeconds($delaySeconds)->toIso8601String(),
         ]);
         $conversation->update(['metadata' => $meta]);
 
-        if (config('queue.default') === 'sync') {
-            Log::warning('WhatsApp: QUEUE_CONNECTION is sync — delayed AI cannot wait 5 minutes. Set QUEUE_CONNECTION=database, run migrations for the jobs table, and keep `php artisan queue:work` running. Sending AI immediately as fallback.', [
-                'conversation_id' => $conversation->id,
-                'incoming_message_id' => $incomingMessage->id,
-            ]);
+        $conversationId = $conversation->id;
+        $incomingId = $incomingMessage->id;
+        $useQueue = (bool) config('services.whatsapp.ai_use_queue', false)
+            && config('queue.default') !== 'sync';
+
+        if ($useQueue) {
+            SendDeferredWhatsAppAiReply::dispatch($conversationId, $incomingId)
+                ->delay(now()->addSeconds($delaySeconds));
+
+            return;
+        }
+
+        if (config('queue.default') === 'sync' && $delaySeconds <= 0) {
             if ($this->isAiAutoReplyEnabled() && $conversation->fresh()->aiReplyEnabled()) {
                 $this->sendAIReply($conversation->fresh(), $incomingMessage->fresh(), $text);
             }
@@ -1821,20 +1872,44 @@ class WhatsAppInboxService
             return;
         }
 
-        SendDeferredWhatsAppAiReply::dispatch($conversation->id, $incomingMessage->id)
-            ->delay(now()->addMinutes($minutes));
+        Log::info('WhatsApp AI reply scheduled (after response)', [
+            'conversation_id' => $conversationId,
+            'incoming_message_id' => $incomingId,
+            'delay_seconds' => $delaySeconds,
+        ]);
+
+        dispatch(function () use ($conversationId, $incomingId, $delaySeconds) {
+            if ($delaySeconds > 0) {
+                sleep($delaySeconds);
+            }
+
+            $inbox = app(WhatsAppInboxService::class);
+            $conv = WhatsappConversation::find($conversationId);
+            if ($conv) {
+                $inbox->ensureConfigForConversation($conv);
+            }
+            $inbox->processDeferredAiReply($conversationId, $incomingId);
+        })->afterResponse();
     }
 
     /**
      * Execute an automation rule.
      */
-    public function executeAutomationRule(WhatsappAutomationRule $rule, WhatsappConversation $conversation): void
+    public function executeAutomationRule(WhatsappAutomationRule $rule, WhatsappConversation $conversation): bool
     {
         if ($rule->template_id && $rule->template) {
-            $this->sendTemplateMessage($conversation, $rule->template->name);
-        } elseif ($rule->response_message) {
-            $this->sendTextMessage($conversation, $rule->response_message);
+            $sent = $this->sendTemplateMessage($conversation, $rule->template->name);
+
+            return $sent !== null;
         }
+
+        if ($rule->response_message) {
+            $sent = $this->sendTextMessage($conversation, $rule->response_message);
+
+            return $sent !== null;
+        }
+
+        return false;
     }
 
     /**
@@ -1843,6 +1918,25 @@ class WhatsAppInboxService
     private function sendAIReply(WhatsappConversation $conversation, WhatsappMessage $incomingMessage, string $text): void
     {
         if (! $this->isAiAutoReplyEnabled() || ! $conversation->fresh()->aiReplyEnabled()) {
+            return;
+        }
+
+        $this->ensureConfigForConversation($conversation);
+
+        if (! $this->isConfigured()) {
+            Log::warning('AI reply skipped: WhatsApp API not configured for this conversation', [
+                'conversation_id' => $conversation->id,
+                'whatsapp_phone_id' => $conversation->whatsapp_phone_id,
+            ]);
+
+            return;
+        }
+
+        if (empty(config('services.openai.api_key'))) {
+            Log::warning('AI reply skipped: OPENAI_API_KEY is not set in .env', [
+                'conversation_id' => $conversation->id,
+            ]);
+
             return;
         }
 
@@ -1901,45 +1995,53 @@ class WhatsAppInboxService
             }
 
             $cfg = $this->config();
-                $phone = $this->normalizePhone($conversation->phone_number);
+            if (! $cfg) {
+                Log::warning('AI reply skipped: no WhatsApp config resolved', [
+                    'conversation_id' => $conversation->id,
+                ]);
 
-                $payload = [
-                    'messaging_product' => 'whatsapp',
-                    'to'   => $phone,
-                    'type' => 'text',
-                    'text' => ['body' => $aiReply],
-                ];
+                return;
+            }
 
-                $response = $this->httpClient()
-                    ->withToken($cfg->access_token)
-                    ->post("https://graph.facebook.com/v19.0/{$cfg->phone_number_id}/messages", $payload);
+            $phone = $this->normalizePhone($conversation->phone_number);
 
-                $body = $response->json();
+            $payload = [
+                'messaging_product' => 'whatsapp',
+                'to'   => $phone,
+                'type' => 'text',
+                'text' => ['body' => $aiReply],
+            ];
 
-                if ($response->successful() && isset($body['messages'][0]['id'])) {
-                    WhatsappMessage::create([
-                        'conversation_id' => $conversation->id,
-                        'lead_id'         => $conversation->lead_id,
-                        'direction'       => 'outgoing',
-                        'message'         => $aiReply,
-                        'message_type'    => 'text',
-                        'meta_message_id' => $body['messages'][0]['id'],
-                        'status'          => 'sent',
-                        'sent_at'         => now(),
-                        'metadata'        => ['ai_generated' => true, 'model' => config('services.openai.model')],
-                    ]);
+            $response = $this->httpClient()
+                ->withToken($cfg->access_token)
+                ->post("https://graph.facebook.com/v19.0/{$cfg->phone_number_id}/messages", $payload);
 
-                    $conversation->update(['last_message_at' => now()]);
+            $body = $response->json();
 
-                    Log::info('AI reply sent', [
-                        'conversation_id' => $conversation->id,
-                        'lead_id'         => $conversation->lead_id,
-                        'incoming'        => $text,
-                        'reply'           => $aiReply,
-                    ]);
-                } else {
-                    $this->logGraphMessagesApiFailure('AI reply send', is_array($body) ? $body : null, $cfg, $phone);
-                }
+            if ($response->successful() && isset($body['messages'][0]['id'])) {
+                WhatsappMessage::create([
+                    'conversation_id' => $conversation->id,
+                    'lead_id'         => $conversation->lead_id,
+                    'direction'       => 'outgoing',
+                    'message'         => $aiReply,
+                    'message_type'    => 'text',
+                    'meta_message_id' => $body['messages'][0]['id'],
+                    'status'          => 'sent',
+                    'sent_at'         => now(),
+                    'metadata'        => ['ai_generated' => true, 'model' => config('services.openai.model')],
+                ]);
+
+                $conversation->update(['last_message_at' => now()]);
+
+                Log::info('AI reply sent', [
+                    'conversation_id' => $conversation->id,
+                    'lead_id'         => $conversation->lead_id,
+                    'incoming'        => $text,
+                    'reply'           => $aiReply,
+                ]);
+            } else {
+                $this->logGraphMessagesApiFailure('AI reply send', is_array($body) ? $body : null, $cfg, $phone);
+            }
         } catch (\Throwable $e) {
             Log::error('AI reply error', [
                 'conversation_id' => $conversation->id,

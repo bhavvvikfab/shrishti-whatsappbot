@@ -16,7 +16,7 @@ class SendDeferredWhatsAppAiReply implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
-    public int $timeout = 120;
+    public int $timeout = 600;
 
     public function __construct(
         public int $conversationId,

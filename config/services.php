@@ -49,7 +49,11 @@ return [
         // Inbound still saves when false; stops AI auto-reply (avoids 131030 noise while testing).
         'ai_auto_reply' => env('WHATSAPP_AI_AUTO_REPLY', true),
         // Wait this many minutes after inbound before AI runs, unless an agent sends from CRM first.
-        'ai_reply_delay_minutes' => max(1, (int) env('WHATSAPP_AI_REPLY_DELAY_MINUTES', 5)),
+        'ai_reply_delay_minutes' => max(1, (int) env('WHATSAPP_AI_REPLY_DELAY_MINUTES', 1)),
+        // Seconds to wait after inbound before AI replies (used when not on queue worker).
+        'ai_reply_delay_seconds' => max(15, (int) env('WHATSAPP_AI_REPLY_DELAY_SECONDS', 60)),
+        // When true, delayed AI uses the queue (requires `php artisan queue:work`). Otherwise runs after webhook response.
+        'ai_use_queue' => (bool) env('WHATSAPP_AI_USE_QUEUE', false),
         'ai_business_name' => env('WHATSAPP_AI_BUSINESS_NAME', 'Shrishti Trip'),
         // Used by WhatsApp Auto AI replies (OpenAIService). Override in .env if needed.
         'ai_company_profile' => env(
