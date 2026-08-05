@@ -227,9 +227,16 @@
                     HIDDEN MODULES END --}}
 
                     @if ($canViewWhatsapp)
-                        <!-- Manage Staff -->
+                        <li class="nav-item mt-2">
+                            <a class="nav-link ccc ddd @if(request()->routeIs('whatsapp.inbox') || request()->routeIs('whatsapp.conversation')) active @endif"
+                                href="{{ route('whatsapp.inbox') }}">
+                                <i class="fab fa-whatsapp me-2 text-success"></i>
+                                <span>WhatsApp Inbox</span>
+                            </a>
+                        </li>
+
                         @if(auth()->user()?->isAdmin())
-                            <li class="nav-item mt-2">
+                            <li class="nav-item mt-1">
                                 <a class="nav-link ccc ddd @if(request()->routeIs('users.*')) active @endif"
                                     href="{{ route('users.index') }}">
                                     <i class="fa fa-users me-2 text-info"></i>
@@ -238,13 +245,6 @@
                             </li>
                         @endif
 
-                        <li class="nav-item mt-2">
-                            <a class="nav-link ccc ddd @if(request()->routeIs('whatsapp.inbox') || request()->routeIs('whatsapp.conversation')) active @endif"
-                                href="{{ route('whatsapp.inbox') }}">
-                                <i class="fab fa-whatsapp me-2 text-success"></i>
-                                <span>WhatsApp Inbox</span>
-                            </a>
-                        </li>
                         @if(auth()->user()?->isAdmin())
                             <li class="nav-item mt-1">
                                 <a class="nav-link ccc ddd @if(request()->routeIs('settings.*')) active @endif"
