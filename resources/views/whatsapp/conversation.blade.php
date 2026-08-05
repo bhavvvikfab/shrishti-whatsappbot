@@ -2291,7 +2291,8 @@ async function sendMessage() {
             removePendingMessage(tempId);
             appendMessage(data.message);
             cancelReply();
-            scheduleChatPoll(1500);
+            scheduleChatPoll(800);
+            scheduleSidebarRefresh();
         } else {
             markPendingMessageFailed(tempId);
             showToast('Failed to send message', 'danger');
@@ -4318,8 +4319,9 @@ var lastReactionPollAt = new Date(Date.now() - 15000).toISOString();
 var chatPollInFlight = false;
 var chatPollTimer = null;
 var sidebarPollInFlight = false;
-var CHAT_POLL_MS = 12000;
-var SIDEBAR_POLL_MS = 30000;
+var sidebarRefreshTimer = null;
+var CHAT_POLL_MS = {{ (int) config('services.whatsapp.chat_poll_ms', 3000) }};
+var SIDEBAR_POLL_MS = {{ (int) config('services.whatsapp.sidebar_poll_ms', 4000) }};
 
 function scheduleChatPoll(delayMs) {
     if (chatPollTimer) clearTimeout(chatPollTimer);
@@ -4347,8 +4349,10 @@ function pollChatMessages() {
             return r.json();
         })
         .then(data => {
+            let hadNewMessages = false;
             (data.messages || []).forEach(msg => {
                 if (!document.getElementById(`msg-${msg.id}`)) {
+                    hadNewMessages = true;
                     appendMessage(msg);
                     if (msg.direction === 'incoming' && document.hidden) {
                         if (typeof window.crmShowOsNotification === 'function') {
@@ -4383,15 +4387,20 @@ function pollChatMessages() {
             if (data.server_time) {
                 lastReactionPollAt = data.server_time;
             }
+            if (hadNewMessages) {
+                scheduleSidebarRefresh();
+            }
         })
-        .catch(() => {})
+        .catch((err) => {
+            console.warn('WhatsApp chat poll failed', err);
+        })
         .finally(() => { chatPollInFlight = false; });
 }
 
 // Poll for new messages (pauses when tab is hidden to protect server resources)
 if (window.chatPollInterval) clearInterval(window.chatPollInterval);
 window.chatPollInterval = setInterval(pollChatMessages, CHAT_POLL_MS);
-scheduleChatPoll(1200);
+scheduleChatPoll(800);
 
 document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
@@ -4670,6 +4679,16 @@ function addFollowup() {
     });
 }
 
+function scheduleSidebarRefresh() {
+    if (sidebarRefreshTimer) {
+        clearTimeout(sidebarRefreshTimer);
+    }
+    sidebarRefreshTimer = setTimeout(() => {
+        sidebarRefreshTimer = null;
+        refreshSidebarConversations();
+    }, 350);
+}
+
 function refreshSidebarConversations() {
     if (document.hidden || sidebarPollInFlight) return;
     const list = document.getElementById('sidebarConvList');
@@ -4696,11 +4715,13 @@ function refreshSidebarConversations() {
                 </a>
             `).join('');
         })
-        .catch(() => {})
+        .catch((err) => {
+            console.warn('WhatsApp sidebar poll failed', err);
+        })
         .finally(() => { sidebarPollInFlight = false; });
 }
 
-// Load sidebar conversations (slow + paused when tab is hidden)
+// Load sidebar conversations (paused when tab is hidden)
 refreshSidebarConversations();
 if (window.sidebarPollInterval) clearInterval(window.sidebarPollInterval);
 window.sidebarPollInterval = setInterval(refreshSidebarConversations, SIDEBAR_POLL_MS);

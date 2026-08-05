@@ -95,7 +95,7 @@ class WhatsappInboxController extends Controller
     public function conversation(WhatsappConversation $conversation, Request $request)
     {
         $activeConfig = $this->activeWhatsappConfig();
-        if ($activeConfig && filled($activeConfig->phone_number_id)
+        if ($activeConfig && filled($activeConfig->phone_number_id) && filled($conversation->whatsapp_phone_id)
             && (string) $conversation->whatsapp_phone_id !== (string) $activeConfig->phone_number_id) {
             abort(404);
         }
@@ -138,7 +138,7 @@ class WhatsappInboxController extends Controller
     private function prepareInboxForConversation(WhatsappConversation $conversation): void
     {
         $activeConfig = $this->activeWhatsappConfig();
-        if ($activeConfig && filled($activeConfig->phone_number_id)
+        if ($activeConfig && filled($activeConfig->phone_number_id) && filled($conversation->whatsapp_phone_id)
             && (string) $conversation->whatsapp_phone_id !== (string) $activeConfig->phone_number_id) {
             abort(404);
         }
@@ -334,6 +334,12 @@ class WhatsappInboxController extends Controller
      */
     public function getMessages(WhatsappConversation $conversation, Request $request)
     {
+        $activeConfig = WhatsappConfig::forUser(Auth::user());
+        if ($activeConfig && filled($activeConfig->phone_number_id) && filled($conversation->whatsapp_phone_id)
+            && (string) $conversation->whatsapp_phone_id !== (string) $activeConfig->phone_number_id) {
+            abort(404);
+        }
+
         if ($request->filled('around_id')) {
             $anchorId = (int) $request->get('around_id');
             $messages = $this->messagesAroundId($conversation, $anchorId);
@@ -405,7 +411,7 @@ class WhatsappInboxController extends Controller
             'revoked_updates' => $revokedUpdates,
             'unread_count' => 0,
             'server_time' => now()->toIso8601String(),
-        ]);
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate');
     }
 
     /**
@@ -666,7 +672,7 @@ class WhatsappInboxController extends Controller
 
         return response()->json([
             'conversations' => $conversations->map(fn($c) => $this->formatConversation($c)),
-        ]);
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate');
     }
 
     /**

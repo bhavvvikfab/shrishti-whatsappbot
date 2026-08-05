@@ -334,6 +334,12 @@ class WhatsAppInboxService
         $conversation->update(['last_message_at' => now()]);
         $this->notifyIncomingWhatsappMessage($conversation, $messageText);
 
+        try {
+            event(new \App\Events\WhatsAppMessageReceived($message, $conversation));
+        } catch (\Throwable $e) {
+            Log::warning('WhatsApp broadcast event failed', ['error' => $e->getMessage()]);
+        }
+
         if ($metaMessageId) {
             $this->refreshReplyLinksForMetaId($metaMessageId);
         }

@@ -209,7 +209,7 @@
 <script>
 var currentStatus = @json($filter ?? 'all');
 var inboxPollInFlight = false;
-var INBOX_POLL_MS = 30000;
+var INBOX_POLL_MS = {{ (int) config('services.whatsapp.inbox_poll_ms', 5000) }};
 
 document.querySelectorAll('.wa-status-tab').forEach(tab => {
     tab.addEventListener('click', function() {

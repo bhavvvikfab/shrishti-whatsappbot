@@ -54,6 +54,10 @@ return [
         'ai_reply_delay_seconds' => max(15, (int) env('WHATSAPP_AI_REPLY_DELAY_SECONDS', 60)),
         // When true, delayed AI uses the queue (requires `php artisan queue:work`). Otherwise runs after webhook response.
         'ai_use_queue' => (bool) env('WHATSAPP_AI_USE_QUEUE', false),
+        // Inbox live refresh intervals (milliseconds) for browser polling.
+        'inbox_poll_ms' => max(2000, (int) env('WHATSAPP_INBOX_POLL_MS', 5000)),
+        'chat_poll_ms' => max(2000, (int) env('WHATSAPP_CHAT_POLL_MS', 3000)),
+        'sidebar_poll_ms' => max(2000, (int) env('WHATSAPP_SIDEBAR_POLL_MS', 4000)),
         'ai_business_name' => env('WHATSAPP_AI_BUSINESS_NAME', 'Shrishti Trip'),
         // Used by WhatsApp Auto AI replies (OpenAIService). Override in .env if needed.
         'ai_company_profile' => env(
